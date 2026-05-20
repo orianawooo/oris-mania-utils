@@ -5,7 +5,7 @@ use tauri::{Emitter, Manager};
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 use crate::config::read_config;
-use crate::calc::calculate_map_internal;
+use crate::calc::{calculate_map_internal, rebuild_songs_index};
 
 #[derive(serde::Deserialize)]
 struct TosuPath {
@@ -71,6 +71,13 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
     let mut last_map_key = String::new();
     let mut last_mods = String::new();
 
+    {
+        let config = read_config();
+        if !config.osu_songs_path.is_empty() {
+            rebuild_songs_index(&config.osu_songs_path);
+        }
+    }
+
     loop {
         let mut request = match url.clone().into_client_request() {
             Ok(req) => req,
@@ -135,27 +142,36 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                                         let _ = tokio::fs::create_dir_all(&overlay_dir).await;
                                         let msd_path = overlay_dir.join("msd.json");
 
-                                        match calculate_map_internal(&config.osu_songs_path, &folder, &file, rate, &md5) {
-                                            Ok(ratings) => {
-                                                let output = serde_json::json!({
-                                                    "map_key": format!("{}||{}", use_key, mods_str),
-                                                    "ratings": ratings
-                                                });
-                                                if let Ok(json_str) = serde_json::to_string(&output) {
-                                                    let _ = tokio::fs::write(&msd_path, json_str).await;
+                                        let app_clone = app.clone();
+                                        let folder_c = folder.clone();
+                                        let file_c = file.clone();
+                                        let md5_c = md5.clone();
+                                        let use_key_c = use_key.clone();
+                                        let mods_str_c = mods_str.clone();
+
+                                        tokio::task::spawn_blocking(move || {
+                                            match calculate_map_internal(&config.osu_songs_path, &folder_c, &file_c, rate, &md5_c) {
+                                                Ok(ratings) => {
+                                                    let output = serde_json::json!({
+                                                        "map_key": format!("{}||{}", use_key_c, mods_str_c),
+                                                        "ratings": ratings
+                                                    });
+                                                    if let Ok(json_str) = serde_json::to_string(&output) {
+                                                        let _ = std::fs::write(&msd_path, json_str);
+                                                    }
+                                                    let _ = app_clone.emit("msd-calculated", &ratings);
                                                 }
-                                                let _ = app.emit("msd-calculated", &ratings);
-                                            }
-                                            Err(e) => {
-                                                let output = serde_json::json!({
-                                                    "map_key": format!("{}||{}", use_key, mods_str),
-                                                    "error": e
-                                                });
-                                                if let Ok(json_str) = serde_json::to_string(&output) {
-                                                    let _ = tokio::fs::write(&msd_path, json_str).await;
+                                                Err(e) => {
+                                                    let output = serde_json::json!({
+                                                        "map_key": format!("{}||{}", use_key_c, mods_str_c),
+                                                        "error": e
+                                                    });
+                                                    if let Ok(json_str) = serde_json::to_string(&output) {
+                                                        let _ = std::fs::write(&msd_path, json_str);
+                                                    }
                                                 }
                                             }
-                                        }
+                                        });
                                     }
                                 }
 

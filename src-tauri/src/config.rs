@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::RwLock;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(default)]
@@ -94,15 +95,29 @@ impl Default for Config {
     }
 }
 
+lazy_static::lazy_static! {
+    static ref CONFIG_CACHE: RwLock<Config> = RwLock::new(Config::default());
+}
+
 pub fn config_path() -> PathBuf {
     let base = dirs_next::data_local_dir().unwrap_or_else(|| PathBuf::from("."));
     base.join("oris-mania-utils").join("config.json")
 }
 
 pub fn read_config() -> Config {
+    if let Ok(cache) = CONFIG_CACHE.read() {
+        return cache.clone();
+    }
+    Config::default()
+}
+
+pub fn load_config_from_disk() -> Config {
     let path = config_path();
     if let Ok(content) = fs::read_to_string(&path) {
         if let Ok(config) = serde_json::from_str::<Config>(&content) {
+            if let Ok(mut cache) = CONFIG_CACHE.write() {
+                *cache = config.clone();
+            }
             return config;
         }
     }
@@ -110,13 +125,17 @@ pub fn read_config() -> Config {
 }
 
 pub fn write_config(config: &Config) {
+    if let Ok(mut cache) = CONFIG_CACHE.write() {
+        *cache = config.clone();
+    }
+
     let path = config_path();
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(content) = serde_json::to_string_pretty(config) {
         let _ = fs::write(&path, &content);
-        
+
         let overlay_path = crate::proxy::get_overlay_path().join("config.json");
         let _ = fs::write(overlay_path, content);
     }

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-05-20 - Deep Performance Optimization Pass
+### Fixed
+- Wrapped MSD calculation in `tokio::task::spawn_blocking` — CPU-heavy `.osu` parsing no longer blocks the async WebSocket event loop.
+- Added O(1) Songs directory index (`HashMap`) — eliminates full-disk scans on folder name cache misses.
+- Cached app config in-memory (`RwLock`) — removed hot-path disk reads from every map calculation and WebSocket client connection.
+- Pre-built `HashSet<rdev::Key>` for the global keyboard hook — gameplay key filtering now exits before any string allocation or lock acquisition for non-gameplay keys.
+- Cached DOM element references in ManiaKeystrokes — eliminates repeated `getElementById`/`querySelector` calls during high-speed streams and jacks.
+- Cached canvas dimensions in radar chart — removed `getBoundingClientRect()` from the chart draw loop to prevent layout reflows on every redraw.
+
+---
+
 ## [0.1.4] - 2026-05-20 - Performance Optimizations
 ### Fixed
 - Fixed in-game performance drops and micro-stutters by caching MSD calculations using beatmap MD5 hashes.

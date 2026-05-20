@@ -105,6 +105,9 @@ if (containerEl) {
     }
 }
 
+const keyEls = [0, 1, 2, 3].map(i => document.getElementById(`key-${i}`));
+const keyMsEls = [0, 1, 2, 3].map(i => document.querySelector(`#key-${i} .key-ms`));
+
 function connect() {
     const ws = new WebSocket('ws://127.0.0.1:24051');
     
@@ -295,9 +298,9 @@ function handleKeyPress(i) {
     if (keyStates[i]) return;
     keyStates[i] = true;
     keyPressTimes[i] = Date.now();
-    
-    document.getElementById(`key-${i}`).classList.add('active');
-    
+
+    if (keyEls[i]) keyEls[i].classList.add('active');
+
     activeBlocks.push({
         key: i,
         y: height,
@@ -309,25 +312,25 @@ function handleKeyPress(i) {
     if (showParticles) {
         createParticles(keyXPositions[i], height, colors[i], rgbEnabledKeys[i]);
     }
-    
+
     wakeUp();
 }
 
 function handleKeyRelease(i) {
     if (!keyStates[i]) return;
     keyStates[i] = false;
-    
-    document.getElementById(`key-${i}`).classList.remove('active');
-    
+
+    if (keyEls[i]) keyEls[i].classList.remove('active');
+
     const duration = Date.now() - keyPressTimes[i];
-    document.querySelector(`#key-${i} .key-ms`).textContent = `${duration}ms`;
-    
+    if (keyMsEls[i]) keyMsEls[i].textContent = `${duration}ms`;
+
     activeBlocks.forEach(b => {
         if (b.key === i && b.holding) {
             b.holding = false;
         }
     });
-    
+
     wakeUp();
 }
 

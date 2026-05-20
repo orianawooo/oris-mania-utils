@@ -1,7 +1,8 @@
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, RwLock};
 use minacalc_rs::{Calc, CalcMode, Note};
 
 #[derive(Clone, Serialize)]
@@ -18,7 +19,26 @@ pub struct SkillRatings {
 }
 
 lazy_static::lazy_static! {
-    static ref CALC_CACHE: std::sync::Mutex<std::collections::HashMap<String, SkillRatings>> = std::sync::Mutex::new(std::collections::HashMap::new());
+    static ref CALC_CACHE: Mutex<HashMap<String, SkillRatings>> = Mutex::new(HashMap::new());
+    static ref SONGS_INDEX: RwLock<HashMap<String, PathBuf>> = RwLock::new(HashMap::new());
+}
+
+pub fn rebuild_songs_index(songs_path: &str) {
+    let songs_dir = Path::new(songs_path);
+    if !songs_dir.is_dir() {
+        return;
+    }
+    let mut index = match SONGS_INDEX.write() {
+        Ok(g) => g,
+        Err(_) => return,
+    };
+    index.clear();
+    if let Ok(entries) = fs::read_dir(songs_dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().trim().to_string();
+            index.insert(name.to_lowercase(), entry.path());
+        }
+    }
 }
 
 pub fn find_osu_file(songs_path: &str, folder_or_id: &str, file: &str) -> Option<PathBuf> {
@@ -56,6 +76,22 @@ pub fn find_osu_file(songs_path: &str, folder_or_id: &str, file: &str) -> Option
     if direct_folder.exists() {
         if let Some(p) = find_in_dir(&direct_folder) {
             return Some(p);
+        }
+    }
+
+    let folder_lower = folder_trimmed.to_lowercase();
+    if let Ok(index) = SONGS_INDEX.read() {
+        if let Some(dir_path) = index.get(&folder_lower) {
+            if let Some(p) = find_in_dir(dir_path) {
+                return Some(p);
+            }
+        }
+        for (key, dir_path) in index.iter() {
+            if key.starts_with(&folder_lower) || key == &folder_lower {
+                if let Some(p) = find_in_dir(dir_path) {
+                    return Some(p);
+                }
+            }
         }
     }
 
@@ -165,9 +201,10 @@ pub fn calculate_map_internal(songs_path: &str, osu_folder: &str, osu_file: &str
         format!("{}||{}||{}", osu_folder, osu_file, rate)
     };
     {
-        let cache = CALC_CACHE.lock().unwrap();
-        if let Some(ratings) = cache.get(&key) {
-            return Ok(ratings.clone());
+        if let Ok(cache) = CALC_CACHE.lock() {
+            if let Some(ratings) = cache.get(&key) {
+                return Ok(ratings.clone());
+            }
         }
     }
 
@@ -213,8 +250,7 @@ pub fn calculate_map_internal(songs_path: &str, osu_folder: &str, osu_file: &str
         map_type,
     };
 
-    {
-        let mut cache = CALC_CACHE.lock().unwrap();
+    if let Ok(mut cache) = CALC_CACHE.lock() {
         cache.insert(key, ratings.clone());
     }
 

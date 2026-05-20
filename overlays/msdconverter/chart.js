@@ -13,6 +13,8 @@ const SKILL_COLORS = {
 
 let chartCanvas = null;
 let chartCtx = null;
+let chartW = 0;
+let chartH = 0;
 
 export function initChart(canvasId) {
     chartCanvas = document.getElementById(canvasId);
@@ -20,26 +22,35 @@ export function initChart(canvasId) {
         chartCtx = chartCanvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
         const rect = chartCanvas.getBoundingClientRect();
+        chartW = rect.width;
+        chartH = rect.height;
         chartCanvas.width = rect.width * dpr;
         chartCanvas.height = rect.height * dpr;
         chartCtx.scale(dpr, dpr);
+
+        window.addEventListener('resize', () => {
+            const r = chartCanvas.getBoundingClientRect();
+            chartW = r.width;
+            chartH = r.height;
+            const d = window.devicePixelRatio || 1;
+            chartCanvas.width = r.width * d;
+            chartCanvas.height = r.height * d;
+            chartCtx.scale(d, d);
+        });
     }
 }
 
 export function drawRadar(r) {
-    if (!chartCanvas || !chartCtx) return;
+    if (!chartCanvas || !chartCtx || chartW === 0 || chartH === 0) return;
 
     const vals = SKILL_KEYS.map(k => r[k] || 0);
     const maxVal = Math.max(...vals, 20);
     const sides = SKILL_KEYS.length;
-    const rect = chartCanvas.getBoundingClientRect();
-    const W = rect.width;
-    const H = rect.height;
-    const cx = W / 2;
-    const cy = H / 2;
+    const cx = chartW / 2;
+    const cy = chartH / 2;
     const radius = Math.min(cx, cy) - 22;
 
-    chartCtx.clearRect(0, 0, W, H);
+    chartCtx.clearRect(0, 0, chartW, chartH);
 
     const setupScreen = document.getElementById('setup-screen');
     const isDarkMode = !setupScreen || setupScreen.classList.contains('dark-mode');
@@ -116,6 +127,5 @@ export function drawRadar(r) {
 
 export function clearRadar() {
     if (!chartCanvas || !chartCtx) return;
-    const rect = chartCanvas.getBoundingClientRect();
-    chartCtx.clearRect(0, 0, rect.width, rect.height);
+    chartCtx.clearRect(0, 0, chartW, chartH);
 }

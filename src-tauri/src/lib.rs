@@ -6,10 +6,10 @@ mod keys;
 use std::fs;
 use std::path::PathBuf;
 
-pub use config::{Config, read_config, write_config, config_path};
-pub use calc::{SkillRatings, calculate_map_internal};
+pub use config::{Config, read_config, load_config_from_disk, write_config, config_path};
+pub use calc::{SkillRatings, calculate_map_internal, rebuild_songs_index};
 pub use proxy::{start_tosu_proxy, TOSU_CONNECTED};
-pub use keys::start_key_server;
+pub use keys::{start_key_server, update_active_keys};
 
 lazy_static::lazy_static! {
     pub static ref KEY_SENDER: tokio::sync::broadcast::Sender<String> = {
@@ -25,10 +25,12 @@ fn get_config() -> Config {
 
 #[tauri::command]
 fn save_config(config: Config) {
+    update_active_keys(&config.keys);
     write_config(&config);
     
-    if let Ok(mut keys) = crate::keys::ACTIVE_KEYS.write() {
-        *keys = config.keys.clone();
+    if !config.osu_songs_path.is_empty() {
+        let path = config.osu_songs_path.clone();
+        std::thread::spawn(move || rebuild_songs_index(&path));
     }
     
     let mut val = serde_json::to_value(&config).unwrap_or_default();
@@ -158,16 +160,18 @@ pub fn run() -> Result<(), tauri::Error> {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            load_config_from_disk();
+
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 start_tosu_proxy(app_handle).await;
             });
-            
+
             let app_handle2 = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 start_key_server(app_handle2).await;
             });
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
