@@ -1,128 +1,121 @@
 # ori's mania utils
 
-A cozy suite of overlays for **osu!mania 4K**, built on top of [tosu](https://github.com/tosuapp/tosu).
+<p align="center">
+  <a href="https://tauri.app/"><img src="https://img.shields.io/badge/Tauri-v2-3f5efb?style=flat-square&logo=tauri" alt="Tauri"></a>
+  <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-2021-de783b?style=flat-square&logo=rust" alt="Rust"></a>
+  <a href="https://github.com/orianawooo/oris-mania-utils/releases/latest"><img src="https://img.shields.io/github/v/release/orianawooo/oris-mania-utils?style=flat-square&color=81b29a" alt="Release"></a>
+  <a href="https://github.com/orianawooo/oris-mania-utils/blob/main/LICENSE"><img src="https://img.shields.io/github/license/orianawooo/oris-mania-utils?style=flat-square&color=f2cc8f" alt="License"></a>
+</p>
 
-- **MSD Calculator** — real-time Etterna skill ratings (Stream, Jumpstream, Stamina...) with radar chart.
-- **Keystroke Overlay** — 4K key visualizer with custom trails, RGB mode, and per-key colors.
-- **Hit Counter** — live judgment counter (MAX / PERF / GREAT / GOOD / BAD / MISS).
-
-All overlays inject directly into osu! via tosu's Chromium layer — works in fullscreen exclusive mode.
-
----
-
-## Features
-
-- **MSD Calculation**: Calculates 8 skill ratings using the Etterna algorithm (`etterna-rs` under the hood) on map change.
-- **Tosu Integration**: Automatically detects map changes and captures play data (hits, keys) in real time.
-- **In-game Injection**: Works natively in fullscreen exclusive mode through Tosu.
-- **Customization**: Configure accent colors, scale, key bindings, and trails directly in the Manager app.
+A premium, high-performance suite of in-game overlays for **osu!mania 4K**, built on top of the [tosu](https://github.com/tosuapp/tosu) runtime client.
 
 ---
 
-## Architecture
+## Key Features
 
+* **MSD Rating Calculator**: Dynamically calculates 8-dimensional Etterna difficulty ratings (Stream, Jumpstream, Stamina, Technical, etc.) on map changes using the `etterna-rs` computation library.
+* **Keystroke Visualizer**: High-frequency 4K key tracker with configurable outer/inner colors, width offsets, lock trails, fade transitions, and dynamic rainbow RGB support.
+* **Judgment Counter**: Real-time play counter tracks MAX, PERF, GREAT, GOOD, BAD, and MISS judgments.
+* **Native Fullscreen Injection**: Fully compatible with exclusive fullscreen mode by leveraging Tosu's internal Chromium overlay injector.
+* **Centralized Configuration**: Customize styling, sizing, scales, and visible metrics in real-time through a dedicated desktop settings companion app.
+
+---
+
+## Architecture Flow
+
+The manager desktop utility hooks system-wide key presses and acts as an difficulty calculation worker, syncing states with the Chromium-rendered overlays:
+
+```mermaid
+graph TD
+    A["osu! Client"] -->|Memory Hooks / Real-time Data| B["Tosu WebSocket Server (Port 24050)"]
+    B -->|Active Map State| C["Manager App (oris-mania-utils.exe)"]
+    C -->|Read Map file| D["Songs Folder"]
+    C -->|Compute SSR ratings| E["etterna-rs engine"]
+    C -->|Write ratings| F["msd.json"]
+    C -->|Hook KeyPresses| G["Keystroke WS Server (Port 24051)"]
+    
+    H["msdconverter Overlay"] -->|Poll ratings (50ms)| F
+    I["ManiaKeystrokes Overlay"] -->|Connect & Animate| G
+    J["HitCounter Overlay"] -->|Live gameplay data| B
 ```
-oris-mania-utils.exe  (Tauri desktop app — Manager)
-├── Reads .osu files from your osu! Songs folder
-├── Computes MSD ratings via etterna-rs (Rust)
-├── Writes results to msd.json
-└── Proxies tosu WebSocket data to trigger recalculation on map change
-
-Tosu overlays  (static HTML/CSS/JS — served by tosu at port 24050)
-├── msdconverter/   → skill ratings + radar chart
-├── ManiaKeystrokes/  → 4K key press visualization with trails
-└── HitCounter/     → real-time judgment breakdown
-```
 
 ---
 
-## Skill ratings
+## Overlay Showcase
 
-| Skill | What it measures |
-|---|---|
-| Overall | Composite difficulty |
-| Stream | Density and speed of single-note streams |
-| Jumpstream | Alternating two-hand stream patterns |
-| Handstream | Sustained three-finger stream density |
-| Stamina | Long-term endurance under pressure |
-| JackSpeed | Same-column rapid repetition |
-| Chordjack | Chord-to-chord jack patterns |
-| Technical | Complex mixed and off-rhythm patterns |
+| MSD Converter (Radar Chart) | Mania Keystrokes | Hit Counter |
+|:---:|:---:|:---:|
+| ![MSD Preview](assets/msd_preview.png) | ![Keystrokes Preview](assets/keystrokes_preview.png) | ![Hit Counter Preview](assets/hitcounter_preview.png) |
 
 ---
 
-## Requirements
+## Setup & Integration
 
-- **[Tosu](https://github.com/tosuapp/tosu/releases/latest) (v4.20.0+)** — running in the background.
-- **osu!mania 4K** game mode.
-
----
-
-## Setup & Game Integration
-
-### 1. Extract to Tosu
-Download the latest release and extract the three folders directly inside tosu's `static/` directory:
-```
+### 1. Extract Files to Tosu
+Download the latest zipped release and extract the folders directly into your Tosu installation's `static/` directory:
+```text
 tosu/
 └── static/
-    ├── msdconverter/     <-- Contains oris-mania-utils.exe (Manager)
+    ├── msdconverter/     <-- Houses oris-mania-utils.exe (Manager)
     ├── ManiaKeystrokes/
     └── HitCounter/
 ```
 
-### 2. Run the Manager
-1. Open **`oris-mania-utils.exe`** inside `static/msdconverter/`.
-2. Select your **osu! Songs folder** path and click **Save**.
-3. Keep it running (you can minimize it). It tracks map changes and writes ratings to `msd.json` automatically.
+### 2. Configure the Manager Utility
+1. Run **`oris-mania-utils.exe`** inside `static/msdconverter/`.
+2. Enter or pick the path to your **osu! Songs directory** and click **Save**.
+3. You can minimize the manager utility to the background. It will automatically listen to map changes and output difficulty data.
 
-### 3. Game Integration & Configuration
+### 3. Displaying Overlays In-Game
+1. Open your web browser to [http://127.0.0.1:24050/settings](http://127.0.0.1:24050/settings) and verify that **In-Game Overlay** is toggled **ON**.
+2. Launch osu!. Press the default Tosu overlay key combination (**Ctrl + Shift + Space**).
+3. Right-click on the screen, click **Add Overlay**, and select the three overlays:
+   *   `msdconverter`
+   *   `ManiaKeystrokes`
+   *   `HitCounter`
+4. Position and size the boxes as preferred, and exit the menu.
 
-#### In-game Overlay Setup
-1. **Enable In-Game Overlay in Tosu**: Open your browser at [http://127.0.0.1:24050/settings](http://127.0.0.1:24050/settings) and verify that the **In-Game Overlay** toggle is turned **ON**.
-2. **Open the menu inside osu!**: Launch the game (make sure Tosu is running and hooked). Press the overlay manager shortcut (default is **Ctrl + Shift + Space** or **Ctrl + Shift + ~**).
-3. **Add the overlays**: Right-click anywhere on the screen inside osu! to open Tosu's overlay management menu. Select **Add Overlay** and add the folders one by one:
-   - `msdconverter`
-   - `ManiaKeystrokes`
-   - `HitCounter`
-4. **Arrange**: Drag and resize the overlay boxes to fit your UI, then close the menu.
-
-#### OBS Studio & Browser Sources
-To stream the overlays or view them in a browser, add them as **Browser Sources** in OBS (do NOT check "Local file"):
-* **MSD Radar**: `http://localhost:24050/msdconverter/` (350x220)
-* **Keystrokes**: `http://localhost:24050/ManiaKeystrokes/` (270x400)
-* **Hit Counter**: `http://localhost:24050/HitCounter/` (240x180)
+### 4. OBS Studio Settings (Streaming)
+Add the overlays as **Browser Sources** in OBS (do NOT select "Local file"):
+*   **MSD Chart**: `http://localhost:24050/msdconverter/` (350x220)
+*   **Keystrokes**: `http://localhost:24050/ManiaKeystrokes/` (270x400)
+*   **Hit Counter**: `http://localhost:24050/HitCounter/` (240x180)
 
 ---
 
-## Building from source
+## Technical Specifications
+
+| Component | Technology |
+|---|---|
+| **Manager Core** | [Tauri v2](https://tauri.app) (Rust framework) |
+| **Difficulty Parser** | [etterna-rs](https://github.com/kangalioo/etterna-rs) |
+| **Overlay Renderers** | Vanilla HTML5 / CSS3 / ES Modules |
+| **Animation Loop** | Canvas 2D Context (particle pooling) |
+| **Inter-Process Comm** | Tokio WebSocket server (Port 24051) & Tosu API (Port 24050) |
+
+---
+
+## Building From Source
+
+Prerequisites: [Rust (stable)](https://rustup.rs) and [Node.js (v18+)](https://nodejs.org).
 
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/orianawooo/oris-mania-utils.git
+cd oris-mania-utils
+
+# Install Node dependencies
 npm install
 
-# Development build
+# Run the Tauri application in developer mode
 npm run tauri dev
 
-# Production build
+# Build the production release binary
 npm run tauri build
 ```
 
-**Requires:** [Rust (stable)](https://rustup.rs) · [Node.js 18+](https://nodejs.org) · [tosu](https://github.com/tosuapp/tosu) running
-
 ---
 
-## Stack
+## Development Lifecycle
 
-| Layer | Technology |
-|---|---|
-| Desktop app | [Tauri v2](https://tauri.app) (Rust + WebView) |
-| MSD calculation | [etterna-rs](https://github.com/kangalioo/etterna-rs) |
-| Overlays | Vanilla HTML / CSS / JS (ES Modules) |
-| Real-time data | tosu WebSocket API |
-| Charts | Canvas API (custom radar renderer) |
-
----
-
-## Changelog
-
-See [CHANGELOG.md](./CHANGELOG.md).
+Detailed changes are tracked in the [CHANGELOG.md](./CHANGELOG.md). Contributions, bug reports, and suggestions are welcome via GitHub issues.
