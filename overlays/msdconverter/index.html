@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSD Calculator - ori's mania utils</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="overlay" class="overlay">
+        <div class="header">
+            <div class="title-block">
+                <span id="song-title">Waiting for osu!...</span>
+                <span id="song-artist"></span>
+            </div>
+            <div class="status-block">
+                <span id="map-type-badge" class="map-type-badge hidden"></span>
+                <span id="connection-dot" class="dot disconnected"></span>
+            </div>
+        </div>
+
+        <div class="metrics-panel">
+            <div class="chart-wrap">
+                <canvas id="radar-chart" width="170" height="170"></canvas>
+            </div>
+            <div class="skill-list">
+                <div class="skill-row overall-row">
+                    <span class="skill-label">Overall</span>
+                    <span id="val-overall" class="skill-val overall-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Stream</span>
+                    <span id="val-stream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Jumpstream</span>
+                    <span id="val-jumpstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Handstream</span>
+                    <span id="val-handstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Stamina</span>
+                    <span id="val-stamina" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">JackSpeed</span>
+                    <span id="val-jackspeed" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Chordjack</span>
+                    <span id="val-chordjack" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Technical</span>
+                    <span id="val-technical" class="skill-val">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="judgments-grid">
+            <div class="judgment-item max">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">MAX</span>
+                </div>
+                <span id="val-max" class="j-val">0</span>
+            </div>
+            <div class="judgment-item perf">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">PERF</span>
+                </div>
+                <span id="val-perf" class="j-val">0</span>
+            </div>
+            <div class="judgment-item great">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">GREAT</span>
+                </div>
+                <span id="val-great" class="j-val">0</span>
+            </div>
+            <div class="judgment-item good">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">GOOD</span>
+                </div>
+                <span id="val-good" class="j-val">0</span>
+            </div>
+            <div class="judgment-item bad">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">BAD</span>
+                </div>
+                <span id="val-bad" class="j-val">0</span>
+            </div>
+            <div class="judgment-item miss">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">MISS</span>
+                </div>
+                <span id="val-miss" class="j-val">0</span>
+            </div>
+        </div>
+
+        <div id="debug-bar" class="debug-bar hidden">
+            <span id="debug-msg"></span>
+        </div>
+    </div>
+
+    <script type="module" src="main.js?v=3"></script>
+
+</body>
+</html>

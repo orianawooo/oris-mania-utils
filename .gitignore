@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Rust build output
+src-tauri/target/
+src-tauri/gen/
+
+# Tauri internals
+.tauri/
+
+# Frontend build
+dist/
+
+# Editor config
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local env
+.env
+.env.local
+
+# Overlay runtime files (generated at runtime, not source)
+overlays/**/config.json
+overlays/**/msd.json
+overlays/**/settings.json
+overlays/**/*.exe
+overlays/**/*.ogg
+overlays/**/*.mp3
+overlays/**/*.gif

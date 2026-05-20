@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ori's mania utils</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="setup-screen" class="setup-screen hidden">
+        <div class="window-controls">
+            <button id="min-btn" class="control-btn">&minus;</button>
+            <button id="max-btn" class="control-btn">&#9633;</button>
+            <button id="close-btn" class="control-btn close">&times;</button>
+        </div>
+        <div class="setup-card">
+            <div class="header-minimal">
+                <h1>ori's mania utils <span class="version">v0.1.0</span></h1>
+                <div class="header-actions" style="display: flex; gap: 8px;">
+                    <button id="theme-toggle-btn" class="btn-secondary">Dark Mode</button>
+                    <button id="setup-guide-btn" class="btn-secondary">Setup Guide</button>
+                </div>
+            </div>
+
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="msd">MSD Converter</button>
+                <button class="tab-btn" data-tab="hits">Hit Counter</button>
+                <button class="tab-btn" data-tab="keys">Keystrokes</button>
+            </div>
+
+            <div id="setup-main-content">
+                <div id="msd-tab" class="tab-pane active">
+                    <p class="setup-desc">Configure your MSD Converter settings here.</p>
+                    
+                    <div class="input-group">
+                        <label for="songs-path-input">Songs folder path:</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="songs-path-input" placeholder="Select your songs folder...">
+                            <button id="explore-btn" class="btn-secondary">Browse</button>
+                        </div>
+                        <span id="path-validation-msg" class="validation-msg">Valid osu! Songs folder</span>
+                    </div>
+
+                    <fieldset class="settings-group">
+                        <legend>Overlay Display</legend>
+                        
+                        <div class="input-group">
+                            <label>Background Opacity:</label>
+                            <div class="control-wrap">
+                                <input type="range" id="setup-opacity" min="0.1" max="1" step="0.05" value="0.85">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Scale:</label>
+                            <div class="control-wrap">
+                                <input type="range" id="setup-scale" min="0.5" max="1.5" step="0.05" value="1">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Show Chart:</label>
+                            <label class="switch">
+                                <input type="checkbox" id="setup-radar" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="input-group vertical">
+                            <label>Visible Categories:</label>
+                            <div class="checkbox-grid">
+                                <button class="pill-btn active" id="btn-stream">Stream</button>
+                                <button class="pill-btn active" id="btn-jumpstream">JS</button>
+                                <button class="pill-btn active" id="btn-handstream">HS</button>
+                                <button class="pill-btn active" id="btn-stamina">Stam</button>
+                                <button class="pill-btn active" id="btn-jackspeed">Jack</button>
+                                <button class="pill-btn active" id="btn-chordjack">CJ</button>
+                                <button class="pill-btn active" id="btn-technical">Tech</button>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="status-bar-minimal">
+                        <div class="status-item">
+                            <span>TOSU:</span> <span id="tosu-status-val" class="status-pill ok">Connected</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Path:</span> <span id="path-status-val" class="status-pill ok">Valid</span>
+                        </div>
+                    </div>
+
+                    <div class="setup-actions">
+                        <button id="download-tosu-btn" class="btn-primary">Download tosu</button>
+                        <button id="retry-btn" class="btn-secondary">Check tosu</button>
+                        <button id="save-config-btn" class="btn-primary">Save</button>
+                    </div>
+                </div>
+
+                <div id="hits-tab" class="tab-pane">
+                    <p class="setup-desc">Configure your Hit Counter overlay here.</p>
+                    
+                    <fieldset class="settings-group">
+                        <legend>Layout & Opacity</legend>
+                        <div class="input-group">
+                            <label>Background Opacity:</label>
+                            <div class="control-wrap">
+                                <input type="range" id="setup-hit-opacity" min="0" max="1" step="0.05" value="0.85">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Scale:</label>
+                            <div class="control-wrap">
+                                <input type="range" id="setup-hit-scale" min="0.5" max="1.5" step="0.05" value="1">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Background Color:</label>
+                            <input type="color" id="setup-hit-bg-color" value="#000000">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Label Color:</label>
+                            <input type="color" id="setup-hit-text-color" value="#ffffff">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Border Style:</label>
+                            <select id="setup-hit-border-style" class="custom-select">
+                                <option value="none" selected>None</option>
+                                <option value="solid">Solid</option>
+                                <option value="dashed">Dashed</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Orientation:</label>
+                            <select id="setup-hit-orientation" class="custom-select">
+                                <option value="vertical">Vertical</option>
+                                <option value="horizontal">Horizontal</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div id="keys-tab" class="tab-pane">
+                    <p class="setup-desc">Configure your Keystrokes overlay here.</p>
+                    
+                    <div class="dashed-box">
+                        <fieldset class="settings-group">
+                            <legend>Key Setup</legend>
+                            <div class="input-group vertical">
+                                <label>Keybindings (4K):</label>
+                                <div class="keybindings-grid">
+                                    <input type="text" id="setup-key-0" value="D" readonly class="setup-key-input">
+                                    <input type="text" id="setup-key-1" value="F" readonly class="setup-key-input">
+                                    <input type="text" id="setup-key-2" value="J" readonly class="setup-key-input">
+                                    <input type="text" id="setup-key-3" value="K" readonly class="setup-key-input">
+                                </div>
+                            </div>
+
+                            <div class="input-group vertical">
+                                <label>Display Labels (4K) (Default: D, F, J, K):</label>
+                                <div class="keybindings-grid">
+                                    <input type="text" id="setup-key-label-0" value="D" class="setup-key-input">
+                                    <input type="text" id="setup-key-label-1" value="F" class="setup-key-input">
+                                    <input type="text" id="setup-key-label-2" value="J" class="setup-key-input">
+                                    <input type="text" id="setup-key-label-3" value="K" class="setup-key-input">
+                                </div>
+                            </div>
+
+                            <div class="input-group vertical">
+                                <label>Individual Button Offsets:</label>
+                                <div class="offsets-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-x-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-y-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-x-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-y-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-x-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-y-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-x-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 1px;">
+                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
+                                            <input type="number" id="setup-key-offset-y-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Key Size (Default: 60):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-key-size" min="40" max="100" step="5" value="60">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Key Gap (Default: 10):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-key-gap" min="0" max="30" step="2" value="10">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="settings-group">
+                            <legend>Theme</legend>
+                            <div class="input-group">
+                                <label>Outer Keys (Default: #00d2ff):</label>
+                                <input type="color" id="setup-key-color-outer" value="#00d2ff">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Inner Keys (Default: #ff007f):</label>
+                                <input type="color" id="setup-key-color-inner" value="#ff007f">
+                            </div>
+
+                            <div class="input-group">
+                                <label>BG Color (Default: #0a0a12):</label>
+                                <input type="color" id="setup-bg-color" value="#0a0a12">
+                            </div>
+
+                            <div class="input-group">
+                                <label>BG Opacity (Default: 0.7):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-bg-opacity" min="0" max="1" step="0.05" value="0.7">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="settings-group">
+                            <legend>Effects</legend>
+                            <div class="input-group">
+                                <label>Particles (Default: Enabled):</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setup-particles" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Trails (Default: Enabled):</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setup-trails" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Trail Speed (Default: 6.0):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-trail-speed" min="1" max="25" step="0.5" value="6.0">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Trail Max Height (Default: 800):</label>
+                                <div class="control-wrap" style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                                    <input type="range" id="setup-trail-height-slider" min="100" max="2000" step="50" value="800" style="flex: 1;">
+                                    <input type="number" id="setup-trail-height-num" value="800" min="50" style="width: 60px; padding: 4px; border: 1px dashed var(--accent-color); background: transparent; color: inherit; font-size: 0.8rem; border-radius: 4px;">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Lock Trails to Buttons (Default: On):</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="setup-lock-trails" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="input-group vertical" id="trail-offsets-group">
+                                <label>Individual Trail Offsets (Horiz. X):</label>
+                                <div class="offsets-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
+                                        <input type="number" id="setup-trail-offset-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
+                                        <input type="number" id="setup-trail-offset-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
+                                        <input type="number" id="setup-trail-offset-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
+                                        <input type="number" id="setup-trail-offset-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group vertical">
+                                <label>Individual Trail Widths (px):</label>
+                                <div class="widths-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
+                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
+                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
+                                        <input type="number" id="setup-trail-width-0" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
+                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
+                                        <input type="number" id="setup-trail-width-1" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
+                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
+                                        <input type="number" id="setup-trail-width-2" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
+                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
+                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
+                                        <input type="number" id="setup-trail-width-3" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group vertical">
+                                <label>RGB Trails (Select Columns):</label>
+                                <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px; margin-bottom: 4px;">
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
+                                        <input type="checkbox" id="setup-rgb-key-0"> Key 1
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
+                                        <input type="checkbox" id="setup-rgb-key-1"> Key 2
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
+                                        <input type="checkbox" id="setup-rgb-key-2"> Key 3
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
+                                        <input type="checkbox" id="setup-rgb-key-3"> Key 4
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>RGB Speed (Default: 1.0):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-rgb-speed" min="0.1" max="10" step="0.1" value="1.0">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Trail Start Opacity (Default: 0.6):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-trail-opacity" min="0.1" max="1" step="0.05" value="0.6">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Trail End Opacity (Default: 0.0):</label>
+                                <div class="control-wrap">
+                                    <input type="range" id="setup-trail-fade" min="0" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+                        </fieldset>
+                        
+                        <div style="margin-top: 15px; margin-bottom: 5px;">
+                            <button type="button" id="setup-keys-reset-btn" class="btn-secondary" style="width: 100%; padding: 8px; font-weight: 600; font-size: 0.85rem;">Reset Keystrokes to Defaults</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay hidden">
+        <div class="header" data-tauri-drag-region>
+            <div class="title-block" data-tauri-drag-region>
+                <span id="song-title">Waiting for osu!...</span>
+                <span id="song-artist"></span>
+            </div>
+            <div class="status-block">
+                <span id="map-type-badge" class="map-type-badge hidden"></span>
+                <span id="connection-dot" class="dot disconnected"></span>
+            </div>
+        </div>
+
+
+
+
+        <div class="metrics-panel">
+            <div class="chart-wrap">
+                <canvas id="radar-chart" width="170" height="170"></canvas>
+            </div>
+            <div class="skill-list">
+                <div class="skill-row overall-row">
+                    <span class="skill-label">Overall</span>
+                    <span id="val-overall" class="skill-val overall-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Stream</span>
+                    <span id="val-stream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Jumpstream</span>
+                    <span id="val-jumpstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Handstream</span>
+                    <span id="val-handstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Stamina</span>
+                    <span id="val-stamina" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">JackSpeed</span>
+                    <span id="val-jackspeed" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Chordjack</span>
+                    <span id="val-chordjack" class="skill-val">-</span>
+                </div>
+                <div class="skill-row">
+                    <span class="skill-label">Technical</span>
+                    <span id="val-technical" class="skill-val">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="judgments-grid">
+            <div class="judgment-item max">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">MAX</span>
+                </div>
+                <span id="val-max" class="j-val">0</span>
+            </div>
+            <div class="judgment-item perf">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">PERF</span>
+                </div>
+                <span id="val-perf" class="j-val">0</span>
+            </div>
+            <div class="judgment-item great">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">GREAT</span>
+                </div>
+                <span id="val-great" class="j-val">0</span>
+            </div>
+            <div class="judgment-item good">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">GOOD</span>
+                </div>
+                <span id="val-good" class="j-val">0</span>
+            </div>
+            <div class="judgment-item bad">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">BAD</span>
+                </div>
+                <span id="val-bad" class="j-val">0</span>
+            </div>
+            <div class="judgment-item miss">
+                <div class="j-header">
+                    <span class="j-dot"></span>
+                    <span class="j-label">MISS</span>
+                </div>
+                <span id="val-miss" class="j-val">0</span>
+            </div>
+        </div>
+        <div id="debug-bar" class="debug-bar hidden">
+            <span id="debug-msg"></span>
+        </div>
+    </div>
+
+    <!-- Setup Guide Modal -->
+    <div id="guide-modal" class="guide-modal">
+        <div class="guide-modal-content">
+            <span class="guide-modal-close">&times;</span>
+            <div class="dashed-box instruction-card-modal">
+                <h4>Setup & Integration Guide</h4>
+                <ol>
+                    <li><strong>Installation Location</strong>:<br>
+                        Ensure the three folders (<code>msdconverter/</code>, <code>ManiaKeystrokes/</code>, and <code>HitCounter/</code>) are placed inside tosu's <code>static/</code> directory:
+                        <div class="location-tree">
+                            tosu/static/<br>
+                            ├── msdconverter/ (contains oris-mania-utils.exe)<br>
+                            ├── ManiaKeystrokes/<br>
+                            └── HitCounter/
+                        </div>
+                    </li>
+                    <li><strong>Configuration</strong>:<br>
+                        Set your <strong>osu! Songs folder</strong> path in the Manager panel and click <strong>Save</strong>.
+                    </li>
+                    <li><strong>Enable Tosu In-Game Overlay</strong>:<br>
+                        Open <span class="copiable-link" data-url="http://127.0.0.1:24050/settings">http://127.0.0.1:24050/settings</span> in your browser and verify that <strong>In-Game Overlay</strong> is enabled (toggled <strong>ON</strong>).
+                    </li>
+                    <li><strong>Add Overlays inside osu!</strong>:<br>
+                        Launch osu! and make sure Tosu is running. Press the overlay toggle keybind (default: <strong>Ctrl + Shift + Space</strong> or <strong>Ctrl + Shift + ~</strong>) to open Tosu's menu. Right-click anywhere in-game and choose <strong>Add Overlay</strong> to add them one by one.
+                    </li>
+                    <li><strong>Browser / OBS Sources</strong>:<br>
+                        To capture them in OBS or open them in your browser, use these local URLs:
+                        <div class="link-group">
+                            <div>• MSD Radar: <span class="copiable-link" data-url="http://localhost:24050/msdconverter/">http://localhost:24050/msdconverter/</span></div>
+                            <div>• Keystrokes: <span class="copiable-link" data-url="http://localhost:24050/ManiaKeystrokes/">http://localhost:24050/ManiaKeystrokes/</span></div>
+                            <div>• Hit Counter: <span class="copiable-link" data-url="http://localhost:24050/HitCounter/">http://localhost:24050/HitCounter/</span></div>
+                        </div>
+                        <span class="copy-note">(Click any link above to copy and open in browser)</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js?v=2"></script>
+
+</body>
+</html>
