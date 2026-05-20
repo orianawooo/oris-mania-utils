@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-05-20 - Cleanups and MSD Title Info
+### Added
+- Added map difficulty name next to the song title in the MSD converter overlay.
+
+### Fixed
+- Removed redundant hit counter grid from the MSD converter overlay to avoid overlap with the dedicated HitCounter panel.
+- Fixed Mermaid diagram syntax in README.md to restore native rendering on GitHub.
+
+---
+
 ## [0.1.2] - 2026-05-20 - WebSockets and Polling Optimizations
 ### Fixed
 - Fixed Tosu WebSocket proxy connection stability by using unified stream polling (handles ping/pong automatically).
