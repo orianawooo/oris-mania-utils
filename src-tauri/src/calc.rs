@@ -158,8 +158,12 @@ pub fn classify_map(stream: f32, jumpstream: f32, handstream: f32, stamina: f32,
     }
 }
 
-pub fn calculate_map_internal(songs_path: &str, osu_folder: &str, osu_file: &str, rate: f32) -> Result<SkillRatings, String> {
-    let key = format!("{}||{}||{}", osu_folder, osu_file, rate);
+pub fn calculate_map_internal(songs_path: &str, osu_folder: &str, osu_file: &str, rate: f32, map_md5: &str) -> Result<SkillRatings, String> {
+    let key = if !map_md5.is_empty() {
+        format!("{}||{}", map_md5, rate)
+    } else {
+        format!("{}||{}||{}", osu_folder, osu_file, rate)
+    };
     {
         let cache = CALC_CACHE.lock().unwrap();
         if let Some(ratings) = cache.get(&key) {

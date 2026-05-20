@@ -102,6 +102,12 @@ function connectToTosu() {
                 setDot('disconnected');
                 showSetup();
             }
+        },
+        onMsdCalculated: (ratings) => {
+            state.currentRatings = ratings;
+            updateUI(ratings);
+            setDot('connected');
+            showError('');
         }
     });
 }
@@ -132,8 +138,6 @@ function handleTosuData(data) {
         file = file.split('||')[1];
     }
 
-    invoke('debug_log', { msg: `TOSU Data - Folder: ${folder}, File: ${file}` }).catch(() => {});
-
     if (title && songTitle) songTitle.textContent = title;
     if (artist && songArtist) songArtist.textContent = artist;
 
@@ -146,7 +150,6 @@ function handleTosuData(data) {
     }
 
     if (mode !== undefined) {
-        invoke('debug_log', { msg: `Mode: ${mode}, CS: ${cs}` }).catch(() => {});
         if (Number(mode) !== 3) {
             showError("Only osu!mania maps are supported.");
             state.isMapValid = false;
@@ -175,67 +178,51 @@ function handleTosuData(data) {
     const id = data.menu?.bm?.id || data.beatmap?.id || '';
     const md5 = data.menu?.bm?.md5 || data.beatmap?.md5 || '';
     const modsStr = data.menu?.mods?.str || data.beatmap?.mods || '';
-    const useKey = id || md5;
+    const useKey = md5 || id;
     const mapKey = `${useKey}||${modsStr}`;
     
-    invoke('debug_log', { msg: `MapKey: ${mapKey}, useKey: ${useKey}` }).catch(() => {});
-    
     if (useKey && mapKey !== state.lastCalculatedKey) {
-        invoke('debug_log', { msg: `Entering IF block for ${mapKey}` }).catch(() => {});
         state.currentMapKey = mapKey;
         state.lastCalculatedKey = mapKey;
-        const myId = ++state.calcId;
-        triggerCalc(folder, file, mapKey, myId);
+        if (!isTauri) {
+            const myId = ++state.calcId;
+            triggerCalc(folder, file, mapKey, myId);
+        } else {
+            setDot('calculating');
+        }
     }
 }
 
 async function triggerCalc(folder, file, mapKey, id) {
-    invoke('debug_log', { msg: `triggerCalc called! id=${id}, calcId=${state.calcId}` }).catch(() => {});
     if (id !== state.calcId) return;
 
     setDot('calculating');
 
-    if (isTauri) {
-        try {
-            const ratings = await invoke('calculate_map', { osuFolder: folder, osuFile: file });
-            state.currentRatings = ratings;
-            updateUI(ratings);
-            invoke('debug_log', { msg: `Calc Success: ${ratings.overall}` }).catch(() => {});
-            setDot('connected');
-            showError('');
-        } catch (e) {
-            resetUI();
-            setDot('connected');
-            showError(String(e));
-            invoke('debug_log', { msg: `Calc Error: ${e}` }).catch(() => {});
-        }
-    } else {
-        if (!state.waitingForCalcSince) state.waitingForCalcSince = Date.now();
-        try {
-            const res = await fetch(`msd.json?t=${Date.now()}`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.map_key === mapKey) {
-                    if (data.error) {
-                        showError(data.error);
-                        state.waitingForCalcSince = 0;
-                        setDot('connected');
-                        return;
-                    }
-                    const ratings = data.ratings;
-                    state.currentRatings = ratings;
-                    updateUI(ratings);
-                    setDot('connected');
-                    showError('');
+    if (!state.waitingForCalcSince) state.waitingForCalcSince = Date.now();
+    try {
+        const res = await fetch(`msd.json?t=${Date.now()}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.map_key === mapKey) {
+                if (data.error) {
+                    showError(data.error);
                     state.waitingForCalcSince = 0;
-                } else {
-                    setTimeout(() => triggerCalc(folder, file, mapKey, id), 50);
+                    setDot('connected');
                     return;
                 }
+                const ratings = data.ratings;
+                state.currentRatings = ratings;
+                updateUI(ratings);
+                setDot('connected');
+                showError('');
+                state.waitingForCalcSince = 0;
+            } else {
+                setTimeout(() => triggerCalc(folder, file, mapKey, id), 50);
+                return;
             }
-        } catch (e) {
-            setTimeout(() => triggerCalc(folder, file, mapKey, id), 100);
         }
+    } catch (e) {
+        setTimeout(() => triggerCalc(folder, file, mapKey, id), 100);
     }
 }
 

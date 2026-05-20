@@ -11,6 +11,9 @@ export function setupTosuConnection(callbacks) {
             window.__TAURI__.event.listen('tosu-status', (event) => {
                 callbacks.onStatus(event.payload);
             });
+            window.__TAURI__.event.listen('msd-calculated', (event) => {
+                if (callbacks.onMsdCalculated) callbacks.onMsdCalculated(event.payload);
+            });
         }
         
         window.__TAURI__.core.invoke('get_tosu_status').then(isConnected => {

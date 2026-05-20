@@ -174,13 +174,10 @@ function handleTosuData(data) {
     const id = data.menu?.bm?.id || data.beatmap?.id || '';
     const md5 = data.menu?.bm?.md5 || data.beatmap?.md5 || '';
     const modsStr = data.menu?.mods?.str || data.beatmap?.mods || '';
-    const useKey = id || md5;
+    const useKey = md5 || id;
     const mapKey = `${useKey}||${modsStr}`;
     
-    invoke('debug_log', { msg: `MapKey: ${mapKey}, useKey: ${useKey}` }).catch(() => {});
-    
     if (useKey && mapKey !== state.lastCalculatedKey) {
-        invoke('debug_log', { msg: `Entering IF block for ${mapKey}` }).catch(() => {});
         state.currentMapKey = mapKey;
         state.lastCalculatedKey = mapKey;
         const myId = ++state.calcId;
@@ -189,7 +186,6 @@ function handleTosuData(data) {
 }
 
 async function triggerCalc(folder, file, mapKey, id) {
-    invoke('debug_log', { msg: `triggerCalc called! id=${id}, calcId=${state.calcId}` }).catch(() => {});
     if (id !== state.calcId) return;
 
     setDot('calculating');

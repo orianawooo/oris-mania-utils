@@ -27,6 +27,10 @@ fn get_config() -> Config {
 fn save_config(config: Config) {
     write_config(&config);
     
+    if let Ok(mut keys) = crate::keys::ACTIVE_KEYS.write() {
+        *keys = config.keys.clone();
+    }
+    
     let mut val = serde_json::to_value(&config).unwrap_or_default();
     if let Some(obj) = val.as_object_mut() {
         obj.insert("event".to_string(), serde_json::json!("bindings"));
@@ -112,9 +116,10 @@ fn clear_log() {
 }
 
 #[tauri::command]
-fn calculate_map(_app: tauri::AppHandle, osu_folder: String, osu_file: String) -> Result<SkillRatings, String> {
+fn calculate_map(_app: tauri::AppHandle, osu_folder: String, osu_file: String, md5: Option<String>) -> Result<SkillRatings, String> {
     let config = read_config();
-    calculate_map_internal(&config.osu_songs_path, &osu_folder, &osu_file, 1.0)
+    let md5_str = md5.unwrap_or_default();
+    calculate_map_internal(&config.osu_songs_path, &osu_folder, &osu_file, 1.0, &md5_str)
 }
 
 #[tauri::command]

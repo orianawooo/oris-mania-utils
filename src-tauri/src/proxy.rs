@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use futures_util::StreamExt;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 use crate::config::read_config;
@@ -89,12 +89,14 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                 TOSU_CONNECTED.store(true, Ordering::SeqCst);
                 let _ = app.emit("tosu-status", "connected");
                 let mut ws_stream = ws_stream;
+                let mut last_emit = std::time::Instant::now();
 
                 while let Some(message) = ws_stream.next().await {
                     match message {
                         Ok(msg) => {
                             if msg.is_text() || msg.is_binary() {
                                 let payload = msg.into_text().unwrap_or_default();
+                                let mut map_changed = false;
 
                                 if let Ok(data) = serde_json::from_str::<TosuPayload>(&payload) {
                                     let mut folder = data.menu.bm.path.folder;
@@ -113,11 +115,12 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                                         }
                                     }
 
-                                    let use_key = if id != "0" && !id.is_empty() { id.clone() } else { md5.clone() };
+                                    let use_key = if !md5.is_empty() { md5.clone() } else { id.clone() };
 
                                     if !use_key.is_empty() && use_key != "0" && (use_key != last_map_key || mods_str != last_mods) {
                                         last_map_key = use_key.clone();
                                         last_mods = mods_str.clone();
+                                        map_changed = true;
 
                                         let mut rate = 1.0f32;
                                         let mods_upper = mods_str.to_uppercase();
@@ -132,7 +135,7 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                                         let _ = tokio::fs::create_dir_all(&overlay_dir).await;
                                         let msd_path = overlay_dir.join("msd.json");
 
-                                        match calculate_map_internal(&config.osu_songs_path, &folder, &file, rate) {
+                                        match calculate_map_internal(&config.osu_songs_path, &folder, &file, rate, &md5) {
                                             Ok(ratings) => {
                                                 let output = serde_json::json!({
                                                     "map_key": format!("{}||{}", use_key, mods_str),
@@ -141,6 +144,7 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                                                 if let Ok(json_str) = serde_json::to_string(&output) {
                                                     let _ = tokio::fs::write(&msd_path, json_str).await;
                                                 }
+                                                let _ = app.emit("msd-calculated", &ratings);
                                             }
                                             Err(e) => {
                                                 let output = serde_json::json!({
@@ -155,7 +159,21 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
                                     }
                                 }
 
-                                let _ = app.emit("tosu-data", payload);
+                                let mut should_emit = false;
+                                if map_changed {
+                                    should_emit = true;
+                                } else if last_emit.elapsed() >= std::time::Duration::from_millis(200) {
+                                    should_emit = true;
+                                }
+
+                                if should_emit {
+                                    if let Some(window) = app.get_webview_window("main") {
+                                        if let Ok(false) = window.is_minimized() {
+                                            let _ = app.emit("tosu-data", payload);
+                                            last_emit = std::time::Instant::now();
+                                        }
+                                    }
+                                }
                             }
                         }
                         Err(_) => {

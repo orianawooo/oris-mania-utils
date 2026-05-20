@@ -1,30 +1,52 @@
 use futures_util::SinkExt;
 use futures_util::StreamExt;
-use tauri::Emitter;
 
 use crate::config::read_config;
 use crate::KEY_SENDER;
 
-pub async fn start_key_server(app: tauri::AppHandle) {
+lazy_static::lazy_static! {
+    pub static ref ACTIVE_KEYS: std::sync::RwLock<Vec<String>> = std::sync::RwLock::new(vec![]);
+}
+
+pub async fn start_key_server(_app: tauri::AppHandle) {
+    {
+        let config = read_config();
+        if let Ok(mut keys) = ACTIVE_KEYS.write() {
+            *keys = config.keys.clone();
+        }
+    }
+
     let listener = match tokio::net::TcpListener::bind("127.0.0.1:24051").await {
         Ok(l) => l,
         Err(_) => return,
     };
     
-    let app_clone = app.clone();
     std::thread::spawn(move || {
         if let Err(_) = rdev::listen(move |event| {
             match event.event_type {
                 rdev::EventType::KeyPress(key) => {
                     let key_str = format!("{:?}", key);
-                    let msg = serde_json::json!({ "event": "key-down", "key": key_str }).to_string();
-                    let _ = KEY_SENDER.send(msg);
-                    let _ = app_clone.emit("global-key", key_str);
+                    let is_active = if let Ok(keys) = ACTIVE_KEYS.read() {
+                        keys.contains(&key_str)
+                    } else {
+                        false
+                    };
+                    if is_active {
+                        let msg = serde_json::json!({ "event": "key-down", "key": key_str }).to_string();
+                        let _ = KEY_SENDER.send(msg);
+                    }
                 }
                 rdev::EventType::KeyRelease(key) => {
                     let key_str = format!("{:?}", key);
-                    let msg = serde_json::json!({ "event": "key-up", "key": key_str }).to_string();
-                    let _ = KEY_SENDER.send(msg);
+                    let is_active = if let Ok(keys) = ACTIVE_KEYS.read() {
+                        keys.contains(&key_str)
+                    } else {
+                        false
+                    };
+                    if is_active {
+                        let msg = serde_json::json!({ "event": "key-up", "key": key_str }).to_string();
+                        let _ = KEY_SENDER.send(msg);
+                    }
                 }
                 _ => {}
             }

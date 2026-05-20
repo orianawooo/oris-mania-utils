@@ -129,6 +129,8 @@ function connect() {
 
 function handleKeyData(data) {
     if (data.event === 'bindings') {
+        activeBlocks = [];
+        keyStates = [false, false, false, false];
         if (data.key_labels) {
             keyLabels = data.key_labels;
         }
@@ -373,6 +375,9 @@ function animate(currentTime) {
             b.h += currentSpeed;
             b.y = height - b.h;
             hasActiveElements = true;
+            if (b.h > height * 1.5) {
+                b.holding = false;
+            }
         } else {
             b.y -= currentSpeed;
         }
