@@ -10,7 +10,10 @@
     <div id="overlay" class="overlay">
         <div class="header">
             <div class="title-block">
-                <span id="song-title">Waiting for osu!...</span>
+                <div class="song-title-row">
+                    <span id="song-title">Waiting for osu!...</span>
+                    <span id="song-difficulty"></span>
+                </div>
                 <span id="song-artist"></span>
             </div>
             <div class="status-block">
@@ -59,50 +62,7 @@
             </div>
         </div>
 
-        <div class="judgments-grid">
-            <div class="judgment-item max">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">MAX</span>
-                </div>
-                <span id="val-max" class="j-val">0</span>
-            </div>
-            <div class="judgment-item perf">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">PERF</span>
-                </div>
-                <span id="val-perf" class="j-val">0</span>
-            </div>
-            <div class="judgment-item great">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">GREAT</span>
-                </div>
-                <span id="val-great" class="j-val">0</span>
-            </div>
-            <div class="judgment-item good">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">GOOD</span>
-                </div>
-                <span id="val-good" class="j-val">0</span>
-            </div>
-            <div class="judgment-item bad">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">BAD</span>
-                </div>
-                <span id="val-bad" class="j-val">0</span>
-            </div>
-            <div class="judgment-item miss">
-                <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">MISS</span>
-                </div>
-                <span id="val-miss" class="j-val">0</span>
-            </div>
-        </div>
+
 
         <div id="debug-bar" class="debug-bar hidden">
             <span id="debug-msg"></span>

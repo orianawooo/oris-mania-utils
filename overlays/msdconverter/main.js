@@ -9,6 +9,7 @@ const invoke = isTauri ? window.__TAURI__.core.invoke : async () => {};
 
 const overlay = document.getElementById('overlay');
 const songTitle = document.getElementById('song-title');
+const songDifficulty = document.getElementById('song-difficulty');
 const songArtist = document.getElementById('song-artist');
 const mapTypeBadge = document.getElementById('map-type-badge');
 const songsPathInput = document.getElementById('songs-path-input');
@@ -105,6 +106,7 @@ function handleTosuData(data) {
     let file = '';
     let title = '';
     let artist = '';
+    let difficulty = '';
 
     if (data.menu?.bm) {
         const pathObj = data.menu.bm.path || {};
@@ -112,6 +114,7 @@ function handleTosuData(data) {
         file = pathObj.file || '';
         title = data.menu.bm.metadata?.title || data.menu.bm.metadata?.titleUnicode || '';
         artist = data.menu.bm.metadata?.artist || data.menu.bm.metadata?.artistUnicode || '';
+        difficulty = data.menu.bm.metadata?.difficulty || '';
     }
 
     if ((!folder || !file) && data.beatmap) {
@@ -120,6 +123,7 @@ function handleTosuData(data) {
         file = pathObj.file || '';
         title = title || data.beatmap.title || '';
         artist = artist || data.beatmap.artist || '';
+        difficulty = difficulty || data.beatmap.difficulty || data.beatmap.version || '';
     }
 
     if (file && file.includes('||')) {
@@ -129,6 +133,7 @@ function handleTosuData(data) {
     invoke('debug_log', { msg: `TOSU Data - Folder: ${folder}, File: ${file}` }).catch(() => {});
 
     if (title && songTitle) songTitle.textContent = title;
+    if (songDifficulty) songDifficulty.textContent = difficulty ? `[${difficulty}]` : '';
     if (artist && songArtist) songArtist.textContent = artist;
 
     let mode = data.menu?.bm?.mode ?? data.gameplay?.mode;

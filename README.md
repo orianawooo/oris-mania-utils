@@ -34,7 +34,7 @@ graph TD
     C -->|Write ratings| F["msd.json"]
     C -->|Hook KeyPresses| G["Keystroke WS Server (Port 24051)"]
     
-    H["msdconverter Overlay"] -->|Poll ratings (50ms)| F
+    H["msdconverter Overlay"] -->|Poll ratings 50ms| F
     I["ManiaKeystrokes Overlay"] -->|Connect & Animate| G
     J["HitCounter Overlay"] -->|Live gameplay data| B
 ```
