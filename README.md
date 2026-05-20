@@ -1,4 +1,5 @@
 # ori's mania utils
+# my discord for suggestions, bug reports, etc: orianawoo
 
 <p align="center">
   <a href="https://tauri.app/"><img src="https://img.shields.io/badge/Tauri-v2-3f5efb?style=flat-square&logo=tauri" alt="Tauri"></a>
