@@ -34,3 +34,7 @@ overlays/**/*.exe
 overlays/**/*.ogg
 overlays/**/*.mp3
 overlays/**/*.gif
+
+# Local Audit and Explanation docs
+project_audit.md
+file_explanations.md

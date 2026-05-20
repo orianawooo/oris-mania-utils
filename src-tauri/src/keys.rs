@@ -36,7 +36,11 @@ pub async fn start_key_server(app: tauri::AppHandle) {
         let tx = KEY_SENDER.clone();
         tokio::spawn(async move {
             if let Ok(ws_stream) = tokio_tungstenite::accept_async(stream).await {
-                let (mut ws_sender, _) = ws_stream.split();
+                let (mut ws_sender, mut ws_receiver) = ws_stream.split();
+                
+                tokio::spawn(async move {
+                    while let Some(_) = ws_receiver.next().await {}
+                });
                 
                 let config = read_config();
                 let mut val = serde_json::to_value(&config).unwrap_or_default();

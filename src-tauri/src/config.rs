@@ -58,7 +58,7 @@ impl Default for Config {
             osu_songs_path: String::new(),
             tosu_port: 24050,
             bg_opacity: 0.85,
-            accent_color: "#7c3aed".to_string(),
+            accent_color: "#a67c52".to_string(),
             scale: 1.0,
             show_radar: true,
             show_particles: true,

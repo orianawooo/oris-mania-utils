@@ -41,6 +41,15 @@ export function drawRadar(r) {
 
     chartCtx.clearRect(0, 0, W, H);
 
+    const setupScreen = document.getElementById('setup-screen');
+    const isDarkMode = !setupScreen || setupScreen.classList.contains('dark-mode');
+
+    const gridColor = isDarkMode ? 'rgba(232, 232, 255, 0.1)' : 'rgba(166, 124, 82, 0.15)';
+    const webColor = isDarkMode ? 'rgba(232, 232, 255, 0.08)' : 'rgba(166, 124, 82, 0.1)';
+    const fillColor = isDarkMode ? 'rgba(232, 232, 255, 0.12)' : 'rgba(166, 124, 82, 0.15)';
+    const strokeColor = isDarkMode ? 'rgba(232, 232, 255, 0.5)' : 'rgba(166, 124, 82, 0.6)';
+    const textColor = isDarkMode ? '#e8e8ff' : '#5d4037';
+
     for (let level = 1; level <= 4; level++) {
         const r = radius * (level / 4);
         chartCtx.beginPath();
@@ -51,7 +60,7 @@ export function drawRadar(r) {
             i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
         }
         chartCtx.closePath();
-        chartCtx.strokeStyle = 'rgba(166, 124, 82, 0.15)';
+        chartCtx.strokeStyle = gridColor;
         chartCtx.lineWidth = 1;
         chartCtx.stroke();
     }
@@ -61,7 +70,7 @@ export function drawRadar(r) {
         chartCtx.beginPath();
         chartCtx.moveTo(cx, cy);
         chartCtx.lineTo(cx + radius * Math.cos(angle), cy + radius * Math.sin(angle));
-        chartCtx.strokeStyle = 'rgba(166, 124, 82, 0.1)';
+        chartCtx.strokeStyle = webColor;
         chartCtx.lineWidth = 1;
         chartCtx.stroke();
     }
@@ -75,9 +84,9 @@ export function drawRadar(r) {
         i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
     }
     chartCtx.closePath();
-    chartCtx.fillStyle = 'rgba(166, 124, 82, 0.15)';
+    chartCtx.fillStyle = fillColor;
     chartCtx.fill();
-    chartCtx.strokeStyle = 'rgba(166, 124, 82, 0.6)';
+    chartCtx.strokeStyle = strokeColor;
     chartCtx.lineWidth = 1.5;
     chartCtx.stroke();
 
@@ -100,7 +109,7 @@ export function drawRadar(r) {
         const labelDist = radius + 14;
         const x = cx + labelDist * Math.cos(angle);
         const y = cy + labelDist * Math.sin(angle);
-        chartCtx.fillStyle = '#5d4037';
+        chartCtx.fillStyle = textColor;
         chartCtx.fillText(SKILL_LABELS[i], x, y);
     }
 }

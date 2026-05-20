@@ -7,7 +7,6 @@ import { drawRadar, clearRadar, initChart } from './chart.js';
 const isTauri = typeof window.__TAURI__ !== 'undefined';
 const invoke = isTauri ? window.__TAURI__.core.invoke : async () => {};
 
-const setupScreen = document.getElementById('setup-screen');
 const overlay = document.getElementById('overlay');
 const songTitle = document.getElementById('song-title');
 const songArtist = document.getElementById('song-artist');

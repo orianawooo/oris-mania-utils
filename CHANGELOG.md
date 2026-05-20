@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-05-20 - Bugfixes and Cleanups
+### Fixed
+- Changed radar chart label colors to adjust dynamically to dark mode in both the manager app and the in-game overlay.
+- Prevented WebSocket socket hanging by draining client read frames in the key Hook WebSocket server.
+- Standardized the default accent color to #a67c52 across the backend config and frontend store.
+- Deleted unused DOM element references and cleaned up duplicate stylesheets (`overlays/ManiaKeystrokes/styles.css`).
+
 ---
 
 ## [0.1.0] - 2026-05-20
