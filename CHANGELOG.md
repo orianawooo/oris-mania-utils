@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-05-20 - WebSockets and Polling Optimizations
+### Fixed
+- Fixed Tosu WebSocket proxy connection stability by using unified stream polling (handles ping/pong automatically).
+- Synced fallback polling timeouts to 50ms in the manager main application.
+
+---
+
 ## [0.1.1] - 2026-05-20 - Bugfixes and Cleanups
 ### Fixed
 - Changed radar chart label colors to adjust dynamically to dark mode in both the manager app and the in-game overlay.

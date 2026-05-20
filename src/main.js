@@ -229,7 +229,7 @@ async function triggerCalc(folder, file, mapKey, id) {
                     showError('');
                     state.waitingForCalcSince = 0;
                 } else {
-                    setTimeout(() => triggerCalc(folder, file, mapKey, id), 1000);
+                    setTimeout(() => triggerCalc(folder, file, mapKey, id), 50);
                     return;
                 }
             }

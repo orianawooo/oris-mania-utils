@@ -88,9 +88,9 @@ pub async fn start_tosu_proxy(app: tauri::AppHandle) {
             Ok((ws_stream, _)) => {
                 TOSU_CONNECTED.store(true, Ordering::SeqCst);
                 let _ = app.emit("tosu-status", "connected");
-                let (_, mut read) = ws_stream.split();
+                let mut ws_stream = ws_stream;
 
-                while let Some(message) = read.next().await {
+                while let Some(message) = ws_stream.next().await {
                     match message {
                         Ok(msg) => {
                             if msg.is_text() || msg.is_binary() {
