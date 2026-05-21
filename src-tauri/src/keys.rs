@@ -10,11 +10,16 @@ lazy_static::lazy_static! {
     static ref ACTIVE_RDEV_KEYS: RwLock<HashSet<String>> = RwLock::new(HashSet::new());
 }
 
+fn normalize_key(s: &str) -> String {
+    let base = s.replace("Key", "").to_lowercase();
+    if base == "backquote" { "semicolon".to_string() } else { base }
+}
+
 fn sync_rdev_set(keys: &[String]) {
     if let Ok(mut set) = ACTIVE_RDEV_KEYS.write() {
         set.clear();
         for k in keys {
-            set.insert(k.clone());
+            set.insert(normalize_key(k));
         }
     }
 }
@@ -37,24 +42,26 @@ pub async fn start_key_server(_app: tauri::AppHandle) {
         if let Err(_) = rdev::listen(move |event| {
             match event.event_type {
                 rdev::EventType::KeyPress(key) => {
-                    let key_str = format!("{:?}", key);
+                    let key_str = normalize_key(&format!("{:?}", key));
                     let is_active = ACTIVE_RDEV_KEYS
                         .read()
                         .map(|s| s.contains(&key_str))
                         .unwrap_or(false);
                     if is_active {
-                        let msg = serde_json::json!({ "event": "key-down", "key": key_str }).to_string();
+                        let raw = format!("{:?}", key);
+                        let msg = serde_json::json!({ "event": "key-down", "key": raw }).to_string();
                         let _ = KEY_SENDER.send(msg);
                     }
                 }
                 rdev::EventType::KeyRelease(key) => {
-                    let key_str = format!("{:?}", key);
+                    let key_str = normalize_key(&format!("{:?}", key));
                     let is_active = ACTIVE_RDEV_KEYS
                         .read()
                         .map(|s| s.contains(&key_str))
                         .unwrap_or(false);
                     if is_active {
-                        let msg = serde_json::json!({ "event": "key-up", "key": key_str }).to_string();
+                        let raw = format!("{:?}", key);
+                        let msg = serde_json::json!({ "event": "key-up", "key": raw }).to_string();
                         let _ = KEY_SENDER.send(msg);
                     }
                 }
