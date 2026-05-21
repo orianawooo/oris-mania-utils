@@ -155,6 +155,11 @@ fn debug_log(msg: String) {
     println!("[JS DEBUG] {}", msg);
 }
 
+#[tauri::command]
+fn set_bind_listening_mode(listening: bool) {
+    crate::keys::IS_LISTENING_FOR_BIND.store(listening, std::sync::atomic::Ordering::Relaxed);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() -> Result<(), tauri::Error> {
     tauri::Builder::default()
@@ -189,7 +194,8 @@ pub fn run() -> Result<(), tauri::Error> {
             minimize_window,
             maximize_window,
             close_window,
-            debug_log
+            debug_log,
+            set_bind_listening_mode
         ])
         .run(tauri::generate_context!())
 } 

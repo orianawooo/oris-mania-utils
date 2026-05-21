@@ -15,7 +15,7 @@
         </div>
         <div class="setup-card">
             <div class="header-minimal">
-                <h1>ori's mania utils <span class="version">v0.1.5</span></h1>
+                <h1>ori's mania utils <span class="version">v0.2.0</span></h1>
                 <div class="header-actions" style="display: flex; gap: 8px;">
                     <button id="theme-toggle-btn" class="btn-secondary">Dark Mode</button>
                     <button id="setup-guide-btn" class="btn-secondary">Setup Guide</button>
@@ -145,251 +145,161 @@
                 </div>
 
                 <div id="keys-tab" class="tab-pane">
-                    <p class="setup-desc">Configure your Keystrokes overlay here.</p>
-                    
-                    <div class="dashed-box">
-                        <fieldset class="settings-group">
-                            <legend>Key Setup</legend>
-                            <div class="input-group vertical">
-                                <label>Keybindings (4K):</label>
-                                <div class="keybindings-grid">
-                                    <input type="text" id="setup-key-0" value="D" readonly class="setup-key-input">
-                                    <input type="text" id="setup-key-1" value="F" readonly class="setup-key-input">
-                                    <input type="text" id="setup-key-2" value="J" readonly class="setup-key-input">
-                                    <input type="text" id="setup-key-3" value="K" readonly class="setup-key-input">
-                                </div>
-                            </div>
+                    <div class="editor-toolbar">
+                        <div class="toolbar-group">
+                            <button class="btn-icon" id="editor-undo" title="Undo">Undo</button>
+                            <button class="btn-icon" id="editor-redo" title="Redo">Redo</button>
+                        </div>
+                        <div class="toolbar-group">
+                            <select id="editor-preset" class="custom-select" title="Layout Presets">
+                                <option value="" disabled selected>Layout Presets...</option>
+                                <option value="classic">Classic Straight</option>
+                                <option value="vshape">V-Shape</option>
+                                <option value="arc">Arc Curve</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="btn-icon" id="editor-export" title="Export Layout">Export</button>
+                            <button class="btn-icon" id="editor-import" title="Import Layout">Import</button>
+                            <input type="file" id="editor-import-file" style="display:none;" accept=".json">
+                            <button class="btn-icon" id="editor-preview-btn" title="Toggle Live Preview">Preview</button>
+                        </div>
+                    </div>
+                    <div class="editor-workspace" id="editor-workspace">
+                        <canvas id="editor-canvas" style="display:block;"></canvas>
+                        <div id="editor-tooltip" class="editor-tooltip"></div>
+                    </div>
+                    <div class="editor-properties">
+                        <div class="prop-tabs">
+                            <button class="prop-tab active" data-panel="panel-global">Global</button>
+                            <button class="prop-tab" data-panel="panel-trails">Trails</button>
+                            <button class="prop-tab" data-panel="panel-colors">Key Colors</button>
+                        </div>
 
-                            <div class="input-group vertical">
-                                <label>Display Labels (4K) (Default: D, F, J, K):</label>
-                                <div class="keybindings-grid">
-                                    <input type="text" id="setup-key-label-0" value="D" class="setup-key-input">
-                                    <input type="text" id="setup-key-label-1" value="F" class="setup-key-input">
-                                    <input type="text" id="setup-key-label-2" value="J" class="setup-key-input">
-                                    <input type="text" id="setup-key-label-3" value="K" class="setup-key-input">
-                                </div>
-                            </div>
-
-                            <div class="input-group vertical">
-                                <label>Individual Button Offsets:</label>
-                                <div class="offsets-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-x-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-y-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-x-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-y-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-x-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-y-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Horiz. X (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-x-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column; gap: 1px;">
-                                            <span style="font-size: 0.65rem; opacity: 0.85;">Vert. Y (Default: 0)</span>
-                                            <input type="number" id="setup-key-offset-y-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Key Size (Default: 60):</label>
-                                <div class="control-wrap">
+                        <div id="panel-global" class="prop-panel active">
+                            <fieldset class="settings-group">
+                                <legend>Dimensions</legend>
+                                <div class="input-row">
+                                    <label>Key Size:</label>
                                     <input type="range" id="setup-key-size" min="40" max="100" step="5" value="60">
+                                    <span id="val-key-size">60</span>
                                 </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Key Gap (Default: 10):</label>
-                                <div class="control-wrap">
-                                    <input type="range" id="setup-key-gap" min="0" max="30" step="2" value="10">
+                                <div class="input-row">
+                                    <label>Key Gap:</label>
+                                    <input type="range" id="setup-key-gap" min="0" max="50" step="2" value="10">
+                                    <span id="val-key-gap">10</span>
                                 </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset class="settings-group">
-                            <legend>Theme</legend>
-                            <div class="input-group">
-                                <label>Outer Keys (Default: #00d2ff):</label>
-                                <input type="color" id="setup-key-color-outer" value="#00d2ff">
-                            </div>
-
-                            <div class="input-group">
-                                <label>Inner Keys (Default: #ff007f):</label>
-                                <input type="color" id="setup-key-color-inner" value="#ff007f">
-                            </div>
-
-                            <div class="input-group">
-                                <label>BG Color (Default: #0a0a12):</label>
-                                <input type="color" id="setup-bg-color" value="#0a0a12">
-                            </div>
-
-                            <div class="input-group">
-                                <label>BG Opacity (Default: 0.7):</label>
-                                <div class="control-wrap">
-                                    <input type="range" id="setup-bg-opacity" min="0" max="1" step="0.05" value="0.7">
+                                <div class="input-row">
+                                    <label>Key Height:</label>
+                                    <input type="range" id="setup-key-height" min="20" max="100" step="5" value="60">
+                                    <span id="val-key-height">60</span>
                                 </div>
-                            </div>
-                        </fieldset>
+                            </fieldset>
+                            <fieldset class="settings-group">
+                                <legend>Background</legend>
+                                <div class="input-row">
+                                    <label>BG Opacity:</label>
+                                    <input type="range" id="setup-bg-opacity" min="0" max="1" step="0.05" value="0.85">
+                                    <span id="val-bg-opacity">0.85</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>BG Color:</label>
+                                    <input type="color" id="setup-bg-color" value="#0a0a12">
+                                </div>
+                            </fieldset>
+                        </div>
 
-                        <fieldset class="settings-group">
-                            <legend>Effects</legend>
-                            <div class="input-group">
-                                <label>Particles (Default: Enabled):</label>
-                                <label class="switch">
-                                    <input type="checkbox" id="setup-particles" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Trails (Default: Enabled):</label>
-                                <label class="switch">
+                        <div id="panel-trails" class="prop-panel">
+                            <fieldset class="settings-group">
+                                <legend>Trails</legend>
+                                <div class="input-row">
+                                    <label>Enable:</label>
                                     <input type="checkbox" id="setup-trails" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Trail Speed (Default: 6.0):</label>
-                                <div class="control-wrap">
-                                    <input type="range" id="setup-trail-speed" min="1" max="25" step="0.5" value="6.0">
                                 </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Trail Max Height (Default: 800):</label>
-                                <div class="control-wrap" style="display: flex; gap: 8px; align-items: center; width: 100%;">
-                                    <input type="range" id="setup-trail-height-slider" min="100" max="2000" step="50" value="800" style="flex: 1;">
-                                    <input type="number" id="setup-trail-height-num" value="800" min="50" style="width: 60px; padding: 4px; border: 1px dashed var(--accent-color); background: transparent; color: inherit; font-size: 0.8rem; border-radius: 4px;">
-                                </div>
-                            </div>
-                            <div class="input-group">
-                                <label>Lock Trails to Buttons (Default: On):</label>
-                                <label class="switch">
+                                <div class="input-row">
+                                    <label>Lock to Keys:</label>
                                     <input type="checkbox" id="setup-lock-trails" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-
-                            <div class="input-group vertical" id="trail-offsets-group">
-                                <label>Individual Trail Offsets (Horiz. X):</label>
-                                <div class="offsets-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
-                                        <input type="number" id="setup-trail-offset-0" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
-                                        <input type="number" id="setup-trail-offset-1" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
-                                        <input type="number" id="setup-trail-offset-2" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="offset-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
-                                        <input type="number" id="setup-trail-offset-3" value="0" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="input-group vertical">
-                                <label>Individual Trail Widths (px):</label>
-                                <div class="widths-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px;">
-                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 1</div>
-                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
-                                        <input type="number" id="setup-trail-width-0" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 2</div>
-                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
-                                        <input type="number" id="setup-trail-width-1" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 3</div>
-                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
-                                        <input type="number" id="setup-trail-width-2" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
-                                    <div class="width-col" style="display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1px dashed var(--accent-color); background: rgba(0,0,0,0.15);">
-                                        <div style="font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--accent-color);">Key 4</div>
-                                        <span style="font-size: 0.65rem; opacity: 0.85;">Width (Default: 50)</span>
-                                        <input type="number" id="setup-trail-width-3" value="50" min="5" max="150" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.25); color: inherit; font-size: 0.75rem;">
-                                    </div>
+                                <div class="input-row">
+                                    <label>Speed:</label>
+                                    <input type="range" id="setup-trail-speed" min="1" max="20" step="0.5" value="6">
+                                    <span id="val-trail-speed">6</span>
                                 </div>
-                            </div>
-
-                            <div class="input-group vertical">
-                                <label>RGB Trails (Select Columns):</label>
-                                <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px; margin-bottom: 4px;">
-                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
-                                        <input type="checkbox" id="setup-rgb-key-0"> Key 1
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
-                                        <input type="checkbox" id="setup-rgb-key-1"> Key 2
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
-                                        <input type="checkbox" id="setup-rgb-key-2"> Key 3
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer;">
-                                        <input type="checkbox" id="setup-rgb-key-3"> Key 4
-                                    </label>
+                                <div class="input-row">
+                                    <label>Height (px):</label>
+                                    <input type="number" id="setup-trail-height-num" value="800" style="width:60px;">
                                 </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>RGB Speed (Default: 1.0):</label>
-                                <div class="control-wrap">
-                                    <input type="range" id="setup-rgb-speed" min="0.1" max="10" step="0.1" value="1.0">
+                                <div class="input-row">
+                                    <label>Start Opacity:</label>
+                                    <input type="range" id="setup-trail-opacity" min="0" max="1" step="0.05" value="0.6">
+                                    <span id="val-trail-opacity">0.6</span>
                                 </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Trail Start Opacity (Default: 0.6):</label>
-                                <div class="control-wrap">
-                                    <input type="range" id="setup-trail-opacity" min="0.1" max="1" step="0.05" value="0.6">
-                                </div>
-                            </div>
-
-                            <div class="input-group">
-                                <label>Trail End Opacity (Default: 0.0):</label>
-                                <div class="control-wrap">
+                                <div class="input-row">
+                                    <label>End Opacity:</label>
                                     <input type="range" id="setup-trail-fade" min="0" max="1" step="0.05" value="0.0">
+                                    <span id="val-trail-fade">0.0</span>
+                                </div>
+                            </fieldset>
+                            <fieldset class="settings-group">
+                                <legend>Particles</legend>
+                                <div class="input-row">
+                                    <label>Enable:</label>
+                                    <input type="checkbox" id="setup-particles" checked>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div id="panel-colors" class="prop-panel">
+                            <p style="font-size:0.8rem; color: #888; margin-bottom:8px;">Individual color per key. Click a key in the preview to select it.</p>
+                            <div class="key-color-grid">
+                                <div class="key-color-item" id="key-color-item-0">
+                                    <span class="key-color-badge" id="key-badge-0">K1</span>
+                                    <input type="color" id="setup-key-color-0" value="#00d2ff">
+                                </div>
+                                <div class="key-color-item" id="key-color-item-1">
+                                    <span class="key-color-badge" id="key-badge-1">K2</span>
+                                    <input type="color" id="setup-key-color-1" value="#ff007f">
+                                </div>
+                                <div class="key-color-item" id="key-color-item-2">
+                                    <span class="key-color-badge" id="key-badge-2">K3</span>
+                                    <input type="color" id="setup-key-color-2" value="#ff007f">
+                                </div>
+                                <div class="key-color-item" id="key-color-item-3">
+                                    <span class="key-color-badge" id="key-badge-3">K4</span>
+                                    <input type="color" id="setup-key-color-3" value="#00d2ff">
                                 </div>
                             </div>
-                        </fieldset>
-                        
-                        <div style="margin-top: 15px; margin-bottom: 5px;">
-                            <button type="button" id="setup-keys-reset-btn" class="btn-secondary" style="width: 100%; padding: 8px; font-weight: 600; font-size: 0.85rem;">Reset Keystrokes to Defaults</button>
+                        </div>
+                    </div>
+                    <div id="context-menu" class="context-menu" style="display:none; position:fixed;">
+                        <div class="context-header">Key <span id="ctx-index">1</span></div>
+                        <div class="context-body">
+                            <div class="ctx-row">
+                                <label>Bind:</label>
+                                <input type="text" id="ctx-bind" readonly class="ctx-input" placeholder="Click, then press key">
+                            </div>
+                            <div class="ctx-row">
+                                <label>Label:</label>
+                                <input type="text" id="ctx-label" class="ctx-input">
+                            </div>
+                            <div class="ctx-row">
+                                <label>X offset:</label>
+                                <input type="number" id="ctx-x" class="ctx-input" style="width:60px;">
+                            </div>
+                            <div class="ctx-row">
+                                <label>Y offset:</label>
+                                <input type="number" id="ctx-y" class="ctx-input" style="width:60px;">
+                            </div>
+                            <div class="ctx-row">
+                                <label>Trail width:</label>
+                                <input type="number" id="ctx-width" class="ctx-input" style="width:60px;">
+                            </div>
+                            <div class="ctx-row">
+                                <label>RGB mode:</label>
+                                <input type="checkbox" id="ctx-rgb">
+                            </div>
+                            <button id="ctx-reset" class="btn-secondary btn-reset" style="margin-top:8px; width:100%;">Reset Offset</button>
+                            <button id="ctx-close" class="btn-secondary" style="margin-top:4px; width:100%;">Close</button>
                         </div>
                     </div>
                 </div>
@@ -398,6 +308,8 @@
     </div>
 
     <div id="overlay" class="overlay hidden">
+
+
         <div class="header" data-tauri-drag-region>
             <div class="title-block" data-tauri-drag-region>
                 <span id="song-title">Waiting for osu!...</span>
@@ -500,8 +412,6 @@
             <span id="debug-msg"></span>
         </div>
     </div>
-
-    <!-- Setup Guide Modal -->
     <div id="guide-modal" class="guide-modal">
         <div class="guide-modal-content">
             <span class="guide-modal-close">&times;</span>
@@ -544,3 +454,4 @@
 
 </body>
 </html>
+

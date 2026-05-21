@@ -1408,7 +1408,7 @@ input:checked + .slider:before {
     color: var(--color-dark-primary, #d4a373);
 }
 
-/* Custom Sliders */
+
 input[type="range"] {
     -webkit-appearance: none;
     width: 100%;
@@ -1480,3 +1480,4 @@ input[type="range"]::-moz-range-thumb {
     box-shadow: 2px 2px 0 #2c1a14;
     border-color: #2c1a14;
 }
+

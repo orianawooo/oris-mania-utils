@@ -1,3 +1,4 @@
+import { initVisualEditor } from './editor.js';
 import { state } from './state.js';
 import { saveVisualSettings, populateSettingsPanel } from './config.js';
 import { setupTosuConnection } from './api.js';
@@ -118,6 +119,10 @@ export function initUIListeners(callbacks = {}) {
     if (gapSlider) {
         gapSlider.addEventListener('input', () => readAndSaveSetupSettings());
     }
+    const heightSlider = document.getElementById('setup-key-height');
+    if (heightSlider) {
+        heightSlider.addEventListener('input', () => readAndSaveSetupSettings());
+    }
 
     const trailsToggle = document.getElementById('setup-trails');
     const trailOpacitySlider = document.getElementById('setup-trail-opacity');
@@ -152,75 +157,7 @@ export function initUIListeners(callbacks = {}) {
         });
     }
 
-    const basicInputs = [
-        'setup-bg-color', 'setup-trail-speed', 'setup-rgb-speed'
-    ];
-    basicInputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', () => readAndSaveSetupSettings());
-    });
-
-    for (let i = 0; i < 4; i++) {
-        const lbl = document.getElementById(`setup-key-label-${i}`);
-        if (lbl) lbl.addEventListener('input', () => readAndSaveSetupSettings());
-
-        const offX = document.getElementById(`setup-key-offset-x-${i}`);
-        const offY = document.getElementById(`setup-key-offset-y-${i}`);
-        if (offX) offX.addEventListener('input', () => readAndSaveSetupSettings());
-        if (offY) offY.addEventListener('input', () => readAndSaveSetupSettings());
-
-        const rgbChk = document.getElementById(`setup-rgb-key-${i}`);
-        if (rgbChk) rgbChk.addEventListener('change', () => readAndSaveSetupSettings());
-
-        const trWidth = document.getElementById(`setup-trail-width-${i}`);
-        if (trWidth) trWidth.addEventListener('input', () => readAndSaveSetupSettings());
-
-        const trOffset = document.getElementById(`setup-trail-offset-${i}`);
-        if (trOffset) trOffset.addEventListener('input', () => readAndSaveSetupSettings());
-    }
-
-    const lockTrailsChk = document.getElementById('setup-lock-trails');
-    if (lockTrailsChk) lockTrailsChk.addEventListener('change', () => {
-        readAndSaveSetupSettings();
-        const group = document.getElementById('trail-offsets-group');
-        if (group) group.style.display = lockTrailsChk.checked ? 'none' : 'flex';
-    });
-
-    const grid = document.querySelector('.checkbox-grid');
-    if (grid) {
-        grid.addEventListener('click', (e) => {
-            const pill = e.target.closest('.pill-btn');
-            if (pill) {
-                const skill = pill.id.replace('btn-', '');
-                const isActive = pill.classList.toggle('active');
-                
-                if (!state.config.visible_skills) state.config.visible_skills = {};
-                state.config.visible_skills[skill] = isActive;
-                
-                readAndSaveSetupSettings();
-            }
-        });
-    }
-
-    for (let i = 0; i < 4; i++) {
-        const input = document.getElementById(`setup-key-${i}`);
-        if (input) {
-            input.addEventListener('click', () => {
-                for (let j = 0; j < 4; j++) {
-                    const otherInput = document.getElementById(`setup-key-${j}`);
-                    if (otherInput && j !== i && otherInput.classList.contains('listening')) {
-                        if (state.config.keys && state.config.keys[j]) {
-                            otherInput.value = state.config.keys[j].replace('Key', '');
-                        }
-                        otherInput.classList.remove('listening');
-                    }
-                }
-                input.value = "Press a key...";
-                input.classList.add('listening');
-                listeningForKeyIndex = i;
-            });
-        }
-    }
+    initVisualEditor();
 
     const exploreBtn = document.getElementById('explore-btn');
     if (exploreBtn) {
@@ -456,7 +393,7 @@ function initTabs() {
 
 
 
-async function readAndSaveSetupSettings() {
+export async function readAndSaveSetupSettings() {
     try {
         const songsPathInput = document.getElementById('songs-path-input');
         const path = songsPathInput ? songsPathInput.value.trim() : '';
@@ -504,26 +441,45 @@ async function readAndSaveSetupSettings() {
         
         if (colorOuterEl) state.config.key_color_outer = colorOuterEl.value;
         if (colorInnerEl) state.config.key_color_inner = colorInnerEl.value;
-        if (sizeEl) state.config.key_size = parseInt(sizeEl.value);
-        if (gapEl) state.config.key_gap = parseInt(gapEl.value);
+        if (sizeEl) {
+            state.config.key_size = parseInt(sizeEl.value);
+            const valLabel = document.getElementById('val-key-size');
+            if (valLabel) valLabel.textContent = sizeEl.value;
+        }
+        if (gapEl) {
+            state.config.key_gap = parseInt(gapEl.value);
+            const valLabel = document.getElementById('val-key-gap');
+            if (valLabel) valLabel.textContent = gapEl.value;
+        }
+        const keyHeightEl = document.getElementById('setup-key-height');
+        if (keyHeightEl) {
+            state.config.key_height = parseInt(keyHeightEl.value);
+            const valLabel = document.getElementById('val-key-height');
+            if (valLabel) valLabel.textContent = keyHeightEl.value;
+        }
+        if (!state.config.key_colors) state.config.key_colors = ['#00d2ff','#ff007f','#ff007f','#00d2ff'];
+        for (let i = 0; i < 4; i++) {
+            const elColor = document.getElementById(`setup-key-color-${i}`);
+            if (elColor) state.config.key_colors[i] = elColor.value;
+        }
 
         const trailsEl = document.getElementById('setup-trails');
         const trailOpacityEl = document.getElementById('setup-trail-opacity');
         
         if (trailsEl) state.config.show_trails = trailsEl.checked;
-        if (trailOpacityEl) state.config.trail_opacity = parseFloat(trailOpacityEl.value);
+        if (trailOpacityEl) { state.config.trail_opacity = parseFloat(trailOpacityEl.value); const valLabel = document.getElementById('val-trail-opacity'); if (valLabel) valLabel.textContent = trailOpacityEl.value; }
 
         const trailFadeEl = document.getElementById('setup-trail-fade');
-        if (trailFadeEl) state.config.trail_fade = parseFloat(trailFadeEl.value);
+        if (trailFadeEl) { state.config.trail_fade = parseFloat(trailFadeEl.value); const valLabel = document.getElementById('val-trail-fade'); if (valLabel) valLabel.textContent = trailFadeEl.value; }
 
         const bgOpacityEl = document.getElementById('setup-bg-opacity');
-        if (bgOpacityEl) state.config.keys_bg_opacity = parseFloat(bgOpacityEl.value);
+        if (bgOpacityEl) { state.config.keys_bg_opacity = parseFloat(bgOpacityEl.value); const valLabel = document.getElementById('val-bg-opacity'); if (valLabel) valLabel.textContent = bgOpacityEl.value; }
 
         const keysBgColorEl = document.getElementById('setup-bg-color');
         if (keysBgColorEl) state.config.keys_bg_color = keysBgColorEl.value;
 
         const trailSpeedEl = document.getElementById('setup-trail-speed');
-        if (trailSpeedEl) state.config.trail_speed = parseFloat(trailSpeedEl.value);
+        if (trailSpeedEl) { state.config.trail_speed = parseFloat(trailSpeedEl.value); const valLabel = document.getElementById('val-trail-speed'); if (valLabel) valLabel.textContent = trailSpeedEl.value; }
 
         const trailHeightEl = document.getElementById('setup-trail-height-num');
         if (trailHeightEl) state.config.trail_height = parseInt(trailHeightEl.value) || 800;
@@ -553,10 +509,7 @@ async function readAndSaveSetupSettings() {
         if (lockTrailsEl) state.config.lock_trails = lockTrailsEl.checked;
 
         if (!state.config.trail_offsets_x) state.config.trail_offsets_x = [0, 0, 0, 0];
-        for (let i = 0; i < 4; i++) {
-            const el = document.getElementById(`setup-trail-offset-${i}`);
-            if (el) state.config.trail_offsets_x[i] = parseInt(el.value) || 0;
-        }
+        if (!state.config.trail_offsets_y) state.config.trail_offsets_y = [0, 0, 0, 0];
 
         if (!state.config.rgb_enabled_keys) state.config.rgb_enabled_keys = [false, false, false, false];
         for (let i = 0; i < 4; i++) {
@@ -610,10 +563,10 @@ export function initWindowControls() {
         closeBtn.addEventListener('click', () => invoke('close_window'));
     }
 
-    const header = document.querySelector('.setup-screen');
-    if (header) {
-        header.addEventListener('mousedown', (e) => {
-            if (e.target.closest('input, button, a, .close-btn, .guide-modal-close, .copiable-link, #guide-modal')) return;
+    const dragHeader = document.querySelector('.header-minimal');
+    if (dragHeader) {
+        dragHeader.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button, a, select, input')) return;
             try {
                 window.__TAURI__.window.getCurrentWindow().startDragging();
             } catch (e) {}

@@ -110,6 +110,40 @@ export function populateSettingsPanel() {
     
     const gapEl = document.getElementById('setup-key-gap');
     if (gapEl && state.config.key_gap) gapEl.value = state.config.key_gap;
+
+    const heightEl = document.getElementById('setup-key-height');
+    if (heightEl && state.config.key_height !== undefined) {
+        heightEl.value = state.config.key_height;
+        const valHeight = document.getElementById('val-key-height');
+        if (valHeight) valHeight.textContent = state.config.key_height;
+    }
+
+    const sizeVal = document.getElementById('val-key-size');
+    if (sizeVal && state.config.key_size) sizeVal.textContent = state.config.key_size;
+
+    const gapVal = document.getElementById('val-key-gap');
+    if (gapVal && state.config.key_gap) gapVal.textContent = state.config.key_gap;
+
+    const opVal = document.getElementById('val-trail-opacity');
+    if (opVal && state.config.trail_opacity !== undefined) opVal.textContent = state.config.trail_opacity;
+
+    const fadeVal = document.getElementById('val-trail-fade');
+    if (fadeVal && state.config.trail_fade !== undefined) fadeVal.textContent = state.config.trail_fade;
+
+    const bgOpVal = document.getElementById('val-bg-opacity');
+    if (bgOpVal && state.config.keys_bg_opacity !== undefined) bgOpVal.textContent = state.config.keys_bg_opacity;
+
+    const speedVal = document.getElementById('val-trail-speed');
+    if (speedVal && state.config.trail_speed !== undefined) speedVal.textContent = state.config.trail_speed;
+
+    if (state.config.key_colors) {
+        for (let i = 0; i < 4; i++) {
+            const picker = document.getElementById(`setup-key-color-${i}`);
+            if (picker && state.config.key_colors[i]) {
+                picker.value = state.config.key_colors[i];
+            }
+        }
+    }
     
     const trailsEl = document.getElementById('setup-trails');
     if (trailsEl && state.config.show_trails !== undefined) trailsEl.checked = state.config.show_trails;

@@ -52,7 +52,34 @@ async function init() {
         applyVisualSettings();
         showOverlay();
         connectToTosu();
+        connectConfigSocket();
     }
+}
+
+let configWs = null;
+
+function connectConfigSocket() {
+    if (configWs) {
+        try {
+            configWs.onclose = null;
+            configWs.close();
+        } catch (e) {}
+    }
+    const ws = new WebSocket('ws://127.0.0.1:24051');
+    configWs = ws;
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.event === 'bindings') {
+                Object.assign(state.config, data);
+                applyVisualSettings();
+            }
+        } catch (err) {}
+    };
+    ws.onclose = () => {
+        configWs = null;
+        setTimeout(connectConfigSocket, 5000);
+    };
 }
 
 async function validatePath(path) {

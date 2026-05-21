@@ -73,7 +73,7 @@ body {
     left: var(--key-offset-x, 0px);
     top: var(--key-offset-y, 0px);
     overflow: hidden;
-    flex-shrink: 1;
+    flex-shrink: 0;
     min-width: 30px;
 }
 

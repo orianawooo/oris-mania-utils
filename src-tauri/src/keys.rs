@@ -1,36 +1,95 @@
 use futures_util::SinkExt;
 use futures_util::StreamExt;
-use std::collections::HashSet;
-use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use tauri::Emitter;
 
 use crate::KEY_SENDER;
 
-lazy_static::lazy_static! {
-    pub static ref ACTIVE_KEYS: RwLock<Vec<String>> = RwLock::new(vec![]);
-    static ref ACTIVE_RDEV_KEYS: RwLock<HashSet<String>> = RwLock::new(HashSet::new());
-}
+pub static IS_LISTENING_FOR_BIND: AtomicBool = AtomicBool::new(false);
 
-fn normalize_key(s: &str) -> String {
-    let base = s.replace("Key", "").to_lowercase();
-    if base == "backquote" { "semicolon".to_string() } else { base }
-}
+static ACTIVE_KEY_0: AtomicU64 = AtomicU64::new(9999);
+static ACTIVE_KEY_1: AtomicU64 = AtomicU64::new(9999);
+static ACTIVE_KEY_2: AtomicU64 = AtomicU64::new(9999);
+static ACTIVE_KEY_3: AtomicU64 = AtomicU64::new(9999);
 
-fn sync_rdev_set(keys: &[String]) {
-    if let Ok(mut set) = ACTIVE_RDEV_KEYS.write() {
-        set.clear();
-        for k in keys {
-            set.insert(normalize_key(k));
+fn parse_rdev_key(s: &str) -> Option<rdev::Key> {
+    match s {
+        "KeyA" => Some(rdev::Key::KeyA),
+        "KeyB" => Some(rdev::Key::KeyB),
+        "KeyC" => Some(rdev::Key::KeyC),
+        "KeyD" => Some(rdev::Key::KeyD),
+        "KeyE" => Some(rdev::Key::KeyE),
+        "KeyF" => Some(rdev::Key::KeyF),
+        "KeyG" => Some(rdev::Key::KeyG),
+        "KeyH" => Some(rdev::Key::KeyH),
+        "KeyI" => Some(rdev::Key::KeyI),
+        "KeyJ" => Some(rdev::Key::KeyJ),
+        "KeyK" => Some(rdev::Key::KeyK),
+        "KeyL" => Some(rdev::Key::KeyL),
+        "KeyM" => Some(rdev::Key::KeyM),
+        "KeyN" => Some(rdev::Key::KeyN),
+        "KeyO" => Some(rdev::Key::KeyO),
+        "KeyP" => Some(rdev::Key::KeyP),
+        "KeyQ" => Some(rdev::Key::KeyQ),
+        "KeyR" => Some(rdev::Key::KeyR),
+        "KeyS" => Some(rdev::Key::KeyS),
+        "KeyT" => Some(rdev::Key::KeyT),
+        "KeyU" => Some(rdev::Key::KeyU),
+        "KeyV" => Some(rdev::Key::KeyV),
+        "KeyW" => Some(rdev::Key::KeyW),
+        "KeyX" => Some(rdev::Key::KeyX),
+        "KeyY" => Some(rdev::Key::KeyY),
+        "KeyZ" => Some(rdev::Key::KeyZ),
+        "Num0" => Some(rdev::Key::Num0),
+        "Num1" => Some(rdev::Key::Num1),
+        "Num2" => Some(rdev::Key::Num2),
+        "Num3" => Some(rdev::Key::Num3),
+        "Num4" => Some(rdev::Key::Num4),
+        "Num5" => Some(rdev::Key::Num5),
+        "Num6" => Some(rdev::Key::Num6),
+        "Num7" => Some(rdev::Key::Num7),
+        "Num8" => Some(rdev::Key::Num8),
+        "Num9" => Some(rdev::Key::Num9),
+        "Space" => Some(rdev::Key::Space),
+        "Backspace" => Some(rdev::Key::Backspace),
+        "Tab" => Some(rdev::Key::Tab),
+        "Return" => Some(rdev::Key::Return),
+        "ShiftLeft" => Some(rdev::Key::ShiftLeft),
+        "ShiftRight" => Some(rdev::Key::ShiftRight),
+        "ControlLeft" => Some(rdev::Key::ControlLeft),
+        "ControlRight" => Some(rdev::Key::ControlRight),
+        "Alt" => Some(rdev::Key::Alt),
+        "AltGr" => Some(rdev::Key::AltGr),
+        "Semicolon" => Some(rdev::Key::SemiColon),
+        "Equal" => Some(rdev::Key::Equal),
+        "Comma" => Some(rdev::Key::Comma),
+        "Minus" => Some(rdev::Key::Minus),
+        "Dot" => Some(rdev::Key::Dot),
+        "Slash" => Some(rdev::Key::Slash),
+        "Backquote" => Some(rdev::Key::BackQuote),
+        "LeftBracket" => Some(rdev::Key::LeftBracket),
+        "Backslash" => Some(rdev::Key::BackSlash),
+        "RightBracket" => Some(rdev::Key::RightBracket),
+        "Quote" => Some(rdev::Key::Quote),
+        _ => {
+            if s.starts_with("Unknown(") && s.ends_with(')') {
+                if let Ok(code) = s[8..s.len() - 1].parse::<u32>() {
+                    return Some(rdev::Key::Unknown(code));
+                }
+            }
+            None
         }
     }
 }
 
-pub async fn start_key_server(_app: tauri::AppHandle) {
+fn key_to_u64(k: rdev::Key) -> u64 {
+    unsafe { std::mem::transmute::<rdev::Key, u64>(k) }
+}
+
+pub async fn start_key_server(app: tauri::AppHandle) {
     {
         let config = crate::config::read_config();
-        if let Ok(mut keys) = ACTIVE_KEYS.write() {
-            *keys = config.keys.clone();
-            sync_rdev_set(&config.keys);
-        }
+        update_active_keys(&config.keys);
     }
 
     let listener = match tokio::net::TcpListener::bind("127.0.0.1:24051").await {
@@ -38,32 +97,62 @@ pub async fn start_key_server(_app: tauri::AppHandle) {
         Err(_) => return,
     };
 
+    let app_clone = app.clone();
     std::thread::spawn(move || {
         if let Err(_) = rdev::listen(move |event| {
-            match event.event_type {
-                rdev::EventType::KeyPress(key) => {
-                    let key_str = normalize_key(&format!("{:?}", key));
-                    let is_active = ACTIVE_RDEV_KEYS
-                        .read()
-                        .map(|s| s.contains(&key_str))
-                        .unwrap_or(false);
-                    if is_active {
-                        let raw = format!("{:?}", key);
-                        let msg = serde_json::json!({ "event": "key-down", "key": raw }).to_string();
-                        let _ = KEY_SENDER.send(msg);
-                    }
+            let is_listening = IS_LISTENING_FOR_BIND.load(Ordering::Relaxed);
+
+            if !is_listening && KEY_SENDER.receiver_count() == 0 {
+                return;
+            }
+
+            let key = match event.event_type {
+                rdev::EventType::KeyPress(k) | rdev::EventType::KeyRelease(k) => k,
+                _ => return,
+            };
+
+            let key_u64 = key_to_u64(key);
+
+            if is_listening {
+                if let rdev::EventType::KeyPress(_) = event.event_type {
+                    let raw = format!("{:?}", key);
+                    let _ = app_clone.emit("bind-key", raw);
                 }
-                rdev::EventType::KeyRelease(key) => {
-                    let key_str = normalize_key(&format!("{:?}", key));
-                    let is_active = ACTIVE_RDEV_KEYS
-                        .read()
-                        .map(|s| s.contains(&key_str))
-                        .unwrap_or(false);
-                    if is_active {
-                        let raw = format!("{:?}", key);
-                        let msg = serde_json::json!({ "event": "key-up", "key": raw }).to_string();
-                        let _ = KEY_SENDER.send(msg);
-                    }
+                return;
+            }
+
+            let idx = if key_u64 == ACTIVE_KEY_0.load(Ordering::Relaxed) {
+                0
+            } else if key_u64 == ACTIVE_KEY_1.load(Ordering::Relaxed) {
+                1
+            } else if key_u64 == ACTIVE_KEY_2.load(Ordering::Relaxed) {
+                2
+            } else if key_u64 == ACTIVE_KEY_3.load(Ordering::Relaxed) {
+                3
+            } else {
+                return;
+            };
+
+            match event.event_type {
+                rdev::EventType::KeyPress(_) => {
+                    let msg = match idx {
+                        0 => r#"{"event":"key-down","index":0}"#,
+                        1 => r#"{"event":"key-down","index":1}"#,
+                        2 => r#"{"event":"key-down","index":2}"#,
+                        3 => r#"{"event":"key-down","index":3}"#,
+                        _ => return,
+                    };
+                    let _ = KEY_SENDER.send(msg.to_string());
+                }
+                rdev::EventType::KeyRelease(_) => {
+                    let msg = match idx {
+                        0 => r#"{"event":"key-up","index":0}"#,
+                        1 => r#"{"event":"key-up","index":1}"#,
+                        2 => r#"{"event":"key-up","index":2}"#,
+                        3 => r#"{"event":"key-up","index":3}"#,
+                        _ => return,
+                    };
+                    let _ = KEY_SENDER.send(msg.to_string());
                 }
                 _ => {}
             }
@@ -111,8 +200,13 @@ pub async fn start_key_server(_app: tauri::AppHandle) {
 }
 
 pub fn update_active_keys(keys: &[String]) {
-    if let Ok(mut active) = ACTIVE_KEYS.write() {
-        *active = keys.to_vec();
-    }
-    sync_rdev_set(keys);
+    let rkeys: Vec<u64> = keys.iter()
+        .filter_map(|k| parse_rdev_key(k))
+        .map(key_to_u64)
+        .collect();
+
+    ACTIVE_KEY_0.store(*rkeys.get(0).unwrap_or(&9999), Ordering::Relaxed);
+    ACTIVE_KEY_1.store(*rkeys.get(1).unwrap_or(&9999), Ordering::Relaxed);
+    ACTIVE_KEY_2.store(*rkeys.get(2).unwrap_or(&9999), Ordering::Relaxed);
+    ACTIVE_KEY_3.store(*rkeys.get(3).unwrap_or(&9999), Ordering::Relaxed);
 }

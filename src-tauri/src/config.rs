@@ -42,6 +42,9 @@ pub struct Config {
     pub lock_trails: bool,
     pub trail_offsets_x: Vec<i32>,
     pub has_run_before: bool,
+    pub key_height: u32,
+    pub key_colors: Vec<String>,
+    pub trail_offsets_y: Vec<i32>,
 }
 
 impl Default for Config {
@@ -91,6 +94,14 @@ impl Default for Config {
             lock_trails: true,
             trail_offsets_x: vec![0, 0, 0, 0],
             has_run_before: false,
+            key_height: 60,
+            key_colors: vec![
+                "#00d2ff".to_string(),
+                "#ff007f".to_string(),
+                "#ff007f".to_string(),
+                "#00d2ff".to_string(),
+            ],
+            trail_offsets_y: vec![0, 0, 0, 0],
         }
     }
 }

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-05-21 - Visual Editor, Overlay Revamp & Latency Polish
+### Added
+- Redesigned visual editor using a dark-themed HTML5 Canvas matching the in-game overlay look.
+- Support for individual key color pickers, trail offsets, and drag-and-drop key/trail custom positions.
+- Guide lines and selection bounding boxes in the visual editor for unlocked trails.
+- Dynamic color rainbow cycle preview on keys and trails when RGB mode is enabled.
+- "Reset Offset" button in context menu to easily snap keys/trails back to default.
+- Support for exporting/importing complete layouts including key bindings.
+- Lock-free, zero-allocation gameplay keyhook using atomic static variables (`AtomicU64`) — bypassing all mutex read locks and lookup overhead.
+- Raw index-based key messages (`{"event":"key-down","index":X}`) — removing string allocations, JSON serialization, and javascript search loops in hot key event pathways.
+- Support for Spanish and special keyboard layouts (like Ñ, commas, brackets) using Rust hook keybind listener fallback.
+
+### Fixed
+- Fixed window drag bug: dragging only triggers from the header, preventing workspace interaction from dragging the Tauri window.
+- Fixed trail alignment: trails now start dynamically from the key's height offset in-game, avoiding static background spawning.
+- Fixed key deform/shrink in narrow overlays by setting `flex-shrink: 0` in CSS.
+- Added full dark mode support to the context menu interface and input controls.
+- Fixed WebSocket memory leak: old sockets are closed explicitly during reconnect loops.
+- Fixed disappearing radar chart: automatically re-calibrates canvas transform matrices and redraws from ratings cache on window resize.
+- Fixed trail height growth: capped active trail height and added block queue limits to prevent memory growth.
+- Fixed editor trail updates: dragging trails now updates the context menu coordinate inputs immediately.
+- Swapped duplicate key binds automatically inside the editor layout manager.
+
+---
+
 ## [0.1.5] - 2026-05-20 - Deep Performance Optimization Pass
 ### Fixed
 - Wrapped MSD calculation in `tokio::task::spawn_blocking` — CPU-heavy `.osu` parsing no longer blocks the async WebSocket event loop.

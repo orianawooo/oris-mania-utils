@@ -23,7 +23,14 @@ export const state = {
             chordjack: true,
             technical: true
         },
-        keys: ["KeyD", "KeyF", "KeyJ", "KeyK"]
+        keys: ["KeyD", "KeyF", "KeyJ", "KeyK"],
+        key_size: 60,
+        key_height: 60,
+        key_gap: 10,
+        key_colors: ["#00d2ff", "#ff007f", "#ff007f", "#00d2ff"],
+        lock_trails: true,
+        trail_offsets_x: [0, 0, 0, 0],
+        trail_offsets_y: [0, 0, 0, 0]
     },
     currentFolder: '',
     currentFile: '',

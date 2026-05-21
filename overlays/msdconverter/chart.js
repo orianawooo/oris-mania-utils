@@ -15,32 +15,42 @@ let chartCanvas = null;
 let chartCtx = null;
 let chartW = 0;
 let chartH = 0;
+let resizeTimeout = null;
+let lastRatings = null;
 
 export function initChart(canvasId) {
     chartCanvas = document.getElementById(canvasId);
     if (chartCanvas) {
         chartCtx = chartCanvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
-        const rect = chartCanvas.getBoundingClientRect();
-        chartW = rect.width;
-        chartH = rect.height;
-        chartCanvas.width = rect.width * dpr;
-        chartCanvas.height = rect.height * dpr;
+        
+        const fixedSize = 200;
+        chartW = fixedSize;
+        chartH = fixedSize;
+        
+        chartCanvas.width = fixedSize * dpr;
+        chartCanvas.height = fixedSize * dpr;
         chartCtx.scale(dpr, dpr);
-
+        
         window.addEventListener('resize', () => {
-            const r = chartCanvas.getBoundingClientRect();
-            chartW = r.width;
-            chartH = r.height;
-            const d = window.devicePixelRatio || 1;
-            chartCanvas.width = r.width * d;
-            chartCanvas.height = r.height * d;
-            chartCtx.scale(d, d);
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const newDpr = window.devicePixelRatio || 1;
+                chartCanvas.width = fixedSize * newDpr;
+                chartCanvas.height = fixedSize * newDpr;
+                chartCtx.setTransform(1, 0, 0, 1, 0, 0);
+                chartCtx.scale(newDpr, newDpr);
+                if (lastRatings) {
+                    drawRadar(lastRatings);
+                }
+            }, 150);
         });
     }
 }
 
 export function drawRadar(r) {
+    if (!r) return;
+    lastRatings = r;
     if (!chartCanvas || !chartCtx || chartW === 0 || chartH === 0) return;
 
     const vals = SKILL_KEYS.map(k => r[k] || 0);

@@ -31,6 +31,7 @@ let trailFade = 0.0;
 let trailWidths = [50, 50, 50, 50];
 let lockTrails = true;
 let trailOffsetsX = [0, 0, 0, 0];
+let trailOffsetsY = [0, 0, 0, 0];
 let speed = 6;
 let rgbSpeed = 1.0;
 let rgbEnabledKeys = [false, false, false, false];
@@ -108,8 +109,17 @@ if (containerEl) {
 const keyEls = [0, 1, 2, 3].map(i => document.getElementById(`key-${i}`));
 const keyMsEls = [0, 1, 2, 3].map(i => document.querySelector(`#key-${i} .key-ms`));
 
+let keysWs = null;
+
 function connect() {
+    if (keysWs) {
+        try {
+            keysWs.onclose = null;
+            keysWs.close();
+        } catch(e) {}
+    }
     const ws = new WebSocket('ws://127.0.0.1:24051');
+    keysWs = ws;
     
     ws.onopen = () => {
         document.getElementById('debug-info').textContent = "Connected to keys server (Rust)";
@@ -121,6 +131,7 @@ function connect() {
     };
     
     ws.onclose = () => {
+        keysWs = null;
         document.getElementById('debug-info').textContent = "Disconnected. Retrying...";
         setTimeout(connect, 2000);
     };
@@ -184,6 +195,9 @@ function handleKeyData(data) {
         if (data.trail_offsets_x !== undefined) {
             trailOffsetsX = data.trail_offsets_x;
         }
+        if (data.trail_offsets_y !== undefined) {
+            trailOffsetsY = data.trail_offsets_y;
+        }
         if (data.trail_speed !== undefined) {
             speed = data.trail_speed;
         }
@@ -212,7 +226,16 @@ function handleKeyData(data) {
             ] : null;
         };
 
-        if (data.key_color_0) {
+        if (data.key_colors && Array.isArray(data.key_colors)) {
+            for (let i = 0; i < Math.min(data.key_colors.length, 4); i++) {
+                const keyColor = data.key_colors[i];
+                if (keyColor) {
+                    document.documentElement.style.setProperty(`--key-color-${i}`, keyColor);
+                    const rgb = hexToRgb(keyColor);
+                    if (rgb) colors[i] = rgb;
+                }
+            }
+        } else if (data.key_color_0) {
             for (let i = 0; i < 4; i++) {
                 const keyColor = data[`key_color_${i}`];
                 if (keyColor) {
@@ -270,16 +293,27 @@ function handleKeyData(data) {
         document.getElementById('debug-info').textContent = `Received: ${data.key}`;
     }
 
-    let receivedKey = data.key.replace('Key', '').toLowerCase();
-    if (receivedKey === 'backquote') receivedKey = 'semicolon';
+    if (data.index !== undefined) {
+        const index = data.index;
+        if (data.event === 'key-down') {
+            handleKeyPress(index);
+        } else if (data.event === 'key-up') {
+            handleKeyRelease(index);
+        }
+        return;
+    }
 
-    const index = keyBindings.findIndex(k => k.replace('Key', '').toLowerCase() === receivedKey);
-    if (index === -1) return;
-
-    if (data.event === 'key-down') {
-        handleKeyPress(index);
-    } else if (data.event === 'key-up') {
-        handleKeyRelease(index);
+    let receivedKey = data.key?.replace('Key', '').toLowerCase();
+    if (receivedKey) {
+        if (receivedKey === 'backquote') receivedKey = 'semicolon';
+        const index = keyBindings.findIndex(k => k.replace('Key', '').toLowerCase() === receivedKey);
+        if (index !== -1) {
+            if (data.event === 'key-down') {
+                handleKeyPress(index);
+            } else if (data.event === 'key-up') {
+                handleKeyRelease(index);
+            }
+        }
     }
 }
 
@@ -308,6 +342,9 @@ function handleKeyPress(i) {
         color: colors[i],
         holding: true
     });
+    if (activeBlocks.length > 100) {
+        activeBlocks.splice(0, activeBlocks.length - 100);
+    }
 
     if (showParticles) {
         createParticles(keyXPositions[i], height, colors[i], rgbEnabledKeys[i]);
@@ -374,11 +411,15 @@ function animate(currentTime) {
     for (let i = activeBlocks.length - 1; i >= 0; i--) {
         const b = activeBlocks[i];
         
+        const yBase = lockTrails 
+            ? (height + (keyOffsetsY[b.key] || 0))
+            : (height + (trailOffsetsY[b.key] || 0));
+
         if (b.holding) {
-            b.h += currentSpeed;
-            b.y = height - b.h;
+            b.h = Math.min(height, b.h + currentSpeed);
+            b.y = yBase - b.h;
             hasActiveElements = true;
-            if (b.h > height * 1.5) {
+            if (b.h >= height) {
                 b.holding = false;
             }
         } else {
@@ -402,13 +443,17 @@ function animate(currentTime) {
             }
             
             if (rgbEnabledKeys[b.key]) {
-                const grad = ctx.createLinearGradient(0, height, 0, 0);
+                const grad = ctx.createLinearGradient(0, yBase, 0, 0);
                 const hue = (currentTime * rgbSpeed * 0.1) % 360;
                 grad.addColorStop(0, `hsla(${hue}, 100%, 50%, ${trailOpacity})`);
                 grad.addColorStop(1, `hsla(${hue}, 100%, 50%, ${trailFade})`);
                 ctx.fillStyle = grad;
             } else {
-                ctx.fillStyle = columnGradients[b.key] || '#fff';
+                const rgb = colors[b.key] || [255, 255, 255];
+                const grad = ctx.createLinearGradient(0, yBase, 0, 0);
+                grad.addColorStop(0, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${trailOpacity})`);
+                grad.addColorStop(1, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${trailFade})`);
+                ctx.fillStyle = grad;
             }
             ctx.fillRect(xPos, b.y, tWidth, b.h);
         }
