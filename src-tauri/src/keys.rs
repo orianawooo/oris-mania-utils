@@ -1,89 +1,29 @@
 use futures_util::SinkExt;
 use futures_util::StreamExt;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
 use tauri::Emitter;
 
 use crate::KEY_SENDER;
 
 pub static IS_LISTENING_FOR_BIND: AtomicBool = AtomicBool::new(false);
 
-static ACTIVE_KEY_0: AtomicU64 = AtomicU64::new(9999);
-static ACTIVE_KEY_1: AtomicU64 = AtomicU64::new(9999);
-static ACTIVE_KEY_2: AtomicU64 = AtomicU64::new(9999);
-static ACTIVE_KEY_3: AtomicU64 = AtomicU64::new(9999);
-
-fn parse_rdev_key(s: &str) -> Option<rdev::Key> {
-    match s {
-        "KeyA" => Some(rdev::Key::KeyA),
-        "KeyB" => Some(rdev::Key::KeyB),
-        "KeyC" => Some(rdev::Key::KeyC),
-        "KeyD" => Some(rdev::Key::KeyD),
-        "KeyE" => Some(rdev::Key::KeyE),
-        "KeyF" => Some(rdev::Key::KeyF),
-        "KeyG" => Some(rdev::Key::KeyG),
-        "KeyH" => Some(rdev::Key::KeyH),
-        "KeyI" => Some(rdev::Key::KeyI),
-        "KeyJ" => Some(rdev::Key::KeyJ),
-        "KeyK" => Some(rdev::Key::KeyK),
-        "KeyL" => Some(rdev::Key::KeyL),
-        "KeyM" => Some(rdev::Key::KeyM),
-        "KeyN" => Some(rdev::Key::KeyN),
-        "KeyO" => Some(rdev::Key::KeyO),
-        "KeyP" => Some(rdev::Key::KeyP),
-        "KeyQ" => Some(rdev::Key::KeyQ),
-        "KeyR" => Some(rdev::Key::KeyR),
-        "KeyS" => Some(rdev::Key::KeyS),
-        "KeyT" => Some(rdev::Key::KeyT),
-        "KeyU" => Some(rdev::Key::KeyU),
-        "KeyV" => Some(rdev::Key::KeyV),
-        "KeyW" => Some(rdev::Key::KeyW),
-        "KeyX" => Some(rdev::Key::KeyX),
-        "KeyY" => Some(rdev::Key::KeyY),
-        "KeyZ" => Some(rdev::Key::KeyZ),
-        "Num0" => Some(rdev::Key::Num0),
-        "Num1" => Some(rdev::Key::Num1),
-        "Num2" => Some(rdev::Key::Num2),
-        "Num3" => Some(rdev::Key::Num3),
-        "Num4" => Some(rdev::Key::Num4),
-        "Num5" => Some(rdev::Key::Num5),
-        "Num6" => Some(rdev::Key::Num6),
-        "Num7" => Some(rdev::Key::Num7),
-        "Num8" => Some(rdev::Key::Num8),
-        "Num9" => Some(rdev::Key::Num9),
-        "Space" => Some(rdev::Key::Space),
-        "Backspace" => Some(rdev::Key::Backspace),
-        "Tab" => Some(rdev::Key::Tab),
-        "Return" => Some(rdev::Key::Return),
-        "ShiftLeft" => Some(rdev::Key::ShiftLeft),
-        "ShiftRight" => Some(rdev::Key::ShiftRight),
-        "ControlLeft" => Some(rdev::Key::ControlLeft),
-        "ControlRight" => Some(rdev::Key::ControlRight),
-        "Alt" => Some(rdev::Key::Alt),
-        "AltGr" => Some(rdev::Key::AltGr),
-        "Semicolon" => Some(rdev::Key::SemiColon),
-        "Equal" => Some(rdev::Key::Equal),
-        "Comma" => Some(rdev::Key::Comma),
-        "Minus" => Some(rdev::Key::Minus),
-        "Dot" => Some(rdev::Key::Dot),
-        "Slash" => Some(rdev::Key::Slash),
-        "Backquote" => Some(rdev::Key::BackQuote),
-        "LeftBracket" => Some(rdev::Key::LeftBracket),
-        "Backslash" => Some(rdev::Key::BackSlash),
-        "RightBracket" => Some(rdev::Key::RightBracket),
-        "Quote" => Some(rdev::Key::Quote),
-        _ => {
-            if s.starts_with("Unknown(") && s.ends_with(')') {
-                if let Ok(code) = s[8..s.len() - 1].parse::<u32>() {
-                    return Some(rdev::Key::Unknown(code));
-                }
-            }
-            None
-        }
-    }
+lazy_static::lazy_static! {
+    static ref ACTIVE_KEYS_NORMALIZED: RwLock<Vec<String>> = RwLock::new(vec![
+        "d".to_string(),
+        "f".to_string(),
+        "j".to_string(),
+        "k".to_string()
+    ]);
 }
 
-fn key_to_u64(k: rdev::Key) -> u64 {
-    unsafe { std::mem::transmute::<rdev::Key, u64>(k) }
+fn normalize_key(s: &str) -> String {
+    let base = s.replace("Key", "").to_lowercase();
+    if base == "backquote" {
+        "semicolon".to_string()
+    } else {
+        base
+    }
 }
 
 pub async fn start_key_server(app: tauri::AppHandle) {
@@ -111,50 +51,35 @@ pub async fn start_key_server(app: tauri::AppHandle) {
                 _ => return,
             };
 
-            let key_u64 = key_to_u64(key);
+            let key_str = format!("{:?}", key);
 
             if is_listening {
                 if let rdev::EventType::KeyPress(_) = event.event_type {
-                    let raw = format!("{:?}", key);
-                    let _ = app_clone.emit("bind-key", raw);
+                    let _ = app_clone.emit("bind-key", key_str);
                 }
                 return;
             }
 
-            let idx = if key_u64 == ACTIVE_KEY_0.load(Ordering::Relaxed) {
-                0
-            } else if key_u64 == ACTIVE_KEY_1.load(Ordering::Relaxed) {
-                1
-            } else if key_u64 == ACTIVE_KEY_2.load(Ordering::Relaxed) {
-                2
-            } else if key_u64 == ACTIVE_KEY_3.load(Ordering::Relaxed) {
-                3
+            let norm_key = normalize_key(&key_str);
+
+            let idx = if let Ok(active) = ACTIVE_KEYS_NORMALIZED.read() {
+                active.iter().position(|k| *k == norm_key)
             } else {
-                return;
+                None
             };
 
-            match event.event_type {
-                rdev::EventType::KeyPress(_) => {
-                    let msg = match idx {
-                        0 => r#"{"event":"key-down","index":0}"#,
-                        1 => r#"{"event":"key-down","index":1}"#,
-                        2 => r#"{"event":"key-down","index":2}"#,
-                        3 => r#"{"event":"key-down","index":3}"#,
-                        _ => return,
-                    };
-                    let _ = KEY_SENDER.send(msg.to_string());
+            if let Some(idx) = idx {
+                match event.event_type {
+                    rdev::EventType::KeyPress(_) => {
+                        let msg = format!(r#"{{"event":"key-down","index":{}}}"#, idx);
+                        let _ = KEY_SENDER.send(msg);
+                    }
+                    rdev::EventType::KeyRelease(_) => {
+                        let msg = format!(r#"{{"event":"key-up","index":{}}}"#, idx);
+                        let _ = KEY_SENDER.send(msg);
+                    }
+                    _ => {}
                 }
-                rdev::EventType::KeyRelease(_) => {
-                    let msg = match idx {
-                        0 => r#"{"event":"key-up","index":0}"#,
-                        1 => r#"{"event":"key-up","index":1}"#,
-                        2 => r#"{"event":"key-up","index":2}"#,
-                        3 => r#"{"event":"key-up","index":3}"#,
-                        _ => return,
-                    };
-                    let _ = KEY_SENDER.send(msg.to_string());
-                }
-                _ => {}
             }
         }) {}
     });
@@ -200,13 +125,10 @@ pub async fn start_key_server(app: tauri::AppHandle) {
 }
 
 pub fn update_active_keys(keys: &[String]) {
-    let rkeys: Vec<u64> = keys.iter()
-        .filter_map(|k| parse_rdev_key(k))
-        .map(key_to_u64)
-        .collect();
-
-    ACTIVE_KEY_0.store(*rkeys.get(0).unwrap_or(&9999), Ordering::Relaxed);
-    ACTIVE_KEY_1.store(*rkeys.get(1).unwrap_or(&9999), Ordering::Relaxed);
-    ACTIVE_KEY_2.store(*rkeys.get(2).unwrap_or(&9999), Ordering::Relaxed);
-    ACTIVE_KEY_3.store(*rkeys.get(3).unwrap_or(&9999), Ordering::Relaxed);
+    if let Ok(mut active) = ACTIVE_KEYS_NORMALIZED.write() {
+        active.clear();
+        for k in keys {
+            active.push(normalize_key(k));
+        }
+    }
 }

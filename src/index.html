@@ -15,7 +15,7 @@
         </div>
         <div class="setup-card">
             <div class="header-minimal">
-                <h1>ori's mania utils <span class="version">v0.2.0</span></h1>
+                <h1>ori's mania utils <span class="version">v0.2.1</span></h1>
                 <div class="header-actions" style="display: flex; gap: 8px;">
                     <button id="theme-toggle-btn" class="btn-secondary">Dark Mode</button>
                     <button id="setup-guide-btn" class="btn-secondary">Setup Guide</button>
@@ -297,6 +297,13 @@
                             <div class="ctx-row">
                                 <label>RGB mode:</label>
                                 <input type="checkbox" id="ctx-rgb">
+                            </div>
+                            <div class="ctx-row" style="margin-top: 6px; border-top: 1px dashed rgba(166,124,82,0.2); padding-top: 6px;">
+                                <label style="font-size: 0.75rem; color: #a67c52;">Apply to all:</label>
+                                <input type="checkbox" id="ctx-apply-all">
+                            </div>
+                            <div id="ctx-scope-indicator" style="font-size: 0.7rem; color: #a67c52; text-align: center; margin-top: 4px; font-style: italic;">
+                                Configuring specific key
                             </div>
                             <button id="ctx-reset" class="btn-secondary btn-reset" style="margin-top:8px; width:100%;">Reset Offset</button>
                             <button id="ctx-close" class="btn-secondary" style="margin-top:4px; width:100%;">Close</button>

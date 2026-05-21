@@ -3,8 +3,13 @@ import { state } from './state.js';
 import { readAndSaveSetupSettings } from './events.js';
 import { populateSettingsPanel, saveVisualSettings } from './config.js';
 
+const isTauri = typeof window.__TAURI__ !== 'undefined';
+const invoke = isTauri ? window.__TAURI__.core.invoke : async () => {};
+
 let selectedKeyIndex = -1;
 let selectedIsTrail = false;
+let menuActiveKeyIndex = -1;
+let menuActiveIsTrail = false;
 let isListeningForBind = false;
 let history = [];
 let redoStack = [];
@@ -42,9 +47,22 @@ export function initVisualEditor() {
             if (sl && lb) {
                 sl.addEventListener('input', () => {
                     lb.textContent = sl.value;
+                    readAndSaveSetupSettings();
                     renderPreview();
                 });
             }
+        });
+        document.getElementById('setup-trails')?.addEventListener('change', () => {
+            readAndSaveSetupSettings();
+            renderPreview();
+        });
+        document.getElementById('setup-particles')?.addEventListener('change', () => {
+            readAndSaveSetupSettings();
+            renderPreview();
+        });
+        document.getElementById('setup-trail-height-num')?.addEventListener('input', () => {
+            readAndSaveSetupSettings();
+            renderPreview();
         });
         for (let i = 0; i < 4; i++) {
             document.getElementById(`setup-key-color-${i}`)?.addEventListener('input', () => {
@@ -102,25 +120,32 @@ export function initVisualEditor() {
 
 
         document.getElementById('ctx-reset')?.addEventListener('click', () => {
-            if (selectedKeyIndex === -1) return;
+            if (menuActiveKeyIndex === -1) return;
             saveHistory();
-            if (selectedIsTrail) {
+            const applyAll = document.getElementById('ctx-apply-all')?.checked || false;
+            if (menuActiveIsTrail) {
                 if (!state.config.trail_offsets_x) state.config.trail_offsets_x = [0,0,0,0];
                 if (!state.config.trail_offsets_y) state.config.trail_offsets_y = [0,0,0,0];
-                state.config.trail_offsets_x[selectedKeyIndex] = 0;
-                state.config.trail_offsets_y[selectedKeyIndex] = 0;
-                
-                document.getElementById('ctx-x').value = 0;
-                document.getElementById('ctx-y').value = 0;
+                if (applyAll) {
+                    state.config.trail_offsets_x = [0,0,0,0];
+                    state.config.trail_offsets_y = [0,0,0,0];
+                } else {
+                    state.config.trail_offsets_x[menuActiveKeyIndex] = 0;
+                    state.config.trail_offsets_y[menuActiveKeyIndex] = 0;
+                }
             } else {
                 if (!state.config.key_offsets_x) state.config.key_offsets_x = [0,0,0,0];
                 if (!state.config.key_offsets_y) state.config.key_offsets_y = [0,0,0,0];
-                state.config.key_offsets_x[selectedKeyIndex] = 0;
-                state.config.key_offsets_y[selectedKeyIndex] = 0;
-                
-                document.getElementById('ctx-x').value = 0;
-                document.getElementById('ctx-y').value = 0;
+                if (applyAll) {
+                    state.config.key_offsets_x = [0,0,0,0];
+                    state.config.key_offsets_y = [0,0,0,0];
+                } else {
+                    state.config.key_offsets_x[menuActiveKeyIndex] = 0;
+                    state.config.key_offsets_y[menuActiveKeyIndex] = 0;
+                }
             }
+            document.getElementById('ctx-x').value = 0;
+            document.getElementById('ctx-y').value = 0;
             populateSettingsPanel();
             saveVisualSettings();
             renderPreview();
@@ -132,23 +157,19 @@ export function initVisualEditor() {
 
         if (isTauri) {
             window.__TAURI__.event.listen('bind-key', (event) => {
-                if (!isListeningForBind || selectedKeyIndex === -1) return;
+                if (!isListeningForBind || menuActiveKeyIndex === -1) return;
                 const keyCode = event.payload;
-                
                 if (!state.config.keys) state.config.keys = ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
-                
                 const existingIndex = state.config.keys.indexOf(keyCode);
-                if (existingIndex !== -1 && existingIndex !== selectedKeyIndex) {
-                    state.config.keys[existingIndex] = state.config.keys[selectedKeyIndex];
+                if (existingIndex !== -1 && existingIndex !== menuActiveKeyIndex) {
+                    state.config.keys[existingIndex] = state.config.keys[menuActiveKeyIndex];
                 }
-                state.config.keys[selectedKeyIndex] = keyCode;
-                
+                state.config.keys[menuActiveKeyIndex] = keyCode;
                 const ctxBind = document.getElementById('ctx-bind');
                 if (ctxBind) {
                     ctxBind.value = keyCode.replace('Key', '');
                     ctxBind.style.borderColor = '';
                 }
-                
                 isListeningForBind = false;
                 invoke('set_bind_listening_mode', { listening: false }).catch(() => {});
                 populateSettingsPanel();
@@ -158,6 +179,7 @@ export function initVisualEditor() {
         }
         document.getElementById('ctx-close')?.addEventListener('click', () => {
             document.getElementById('context-menu').style.display = 'none';
+            menuActiveKeyIndex = -1;
             selectedKeyIndex = -1;
             isListeningForBind = false;
             renderPreview();
@@ -173,44 +195,61 @@ export function initVisualEditor() {
                 }
             });
         }
+        function mapJsCodeToRdev(code) {
+            if (code.startsWith('Key')) return code;
+            if (code.startsWith('Digit')) return code.replace('Digit', 'Num');
+            if (code === 'Semicolon') return 'SemiColon';
+            if (code === 'Period') return 'Dot';
+            if (code === 'BracketLeft') return 'LeftBracket';
+            if (code === 'BracketRight') return 'RightBracket';
+            return code;
+        }
         document.addEventListener('keydown', (e) => {
-            if (isTauri) return;
-            if (!isListeningForBind || selectedKeyIndex === -1) return;
+            if (!isListeningForBind || menuActiveKeyIndex === -1) return;
             e.preventDefault();
-            const keyCode = e.code;
+            const rdevCode = mapJsCodeToRdev(e.code);
             if (!state.config.keys) state.config.keys = ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
-            
-            const existingIndex = state.config.keys.indexOf(keyCode);
-            if (existingIndex !== -1 && existingIndex !== selectedKeyIndex) {
-                state.config.keys[existingIndex] = state.config.keys[selectedKeyIndex];
+            const existingIndex = state.config.keys.indexOf(rdevCode);
+            if (existingIndex !== -1 && existingIndex !== menuActiveKeyIndex) {
+                state.config.keys[existingIndex] = state.config.keys[menuActiveKeyIndex];
             }
-            state.config.keys[selectedKeyIndex] = keyCode;
+            state.config.keys[menuActiveKeyIndex] = rdevCode;
             const ctxBind = document.getElementById('ctx-bind');
             if (ctxBind) {
-                ctxBind.value = keyCode.replace('Key', '');
+                ctxBind.value = rdevCode.replace('Key', '');
                 ctxBind.style.borderColor = '';
             }
             isListeningForBind = false;
+            if (isTauri) {
+                invoke('set_bind_listening_mode', { listening: false }).catch(() => {});
+            }
             populateSettingsPanel();
             saveVisualSettings();
+            renderPreview();
         });
-        ['ctx-label', 'ctx-x', 'ctx-y', 'ctx-width', 'ctx-rgb'].forEach(id => {
+        ['ctx-label', 'ctx-x', 'ctx-y', 'ctx-width', 'ctx-rgb', 'ctx-apply-all'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('change', () => {
-                if (selectedKeyIndex === -1) return;
-                applyContextToState(selectedKeyIndex);
+                if (menuActiveKeyIndex === -1) return;
+                updateScopeIndicator();
+                applyContextToState(menuActiveKeyIndex);
                 saveVisualSettings();
                 renderPreview();
             });
         });
         document.getElementById('ctx-x')?.addEventListener('input', () => {
-            if (selectedKeyIndex === -1) return;
-            applyContextToState(selectedKeyIndex);
+            if (menuActiveKeyIndex === -1) return;
+            applyContextToState(menuActiveKeyIndex);
             renderPreview();
         });
         document.getElementById('ctx-y')?.addEventListener('input', () => {
-            if (selectedKeyIndex === -1) return;
-            applyContextToState(selectedKeyIndex);
+            if (menuActiveKeyIndex === -1) return;
+            applyContextToState(menuActiveKeyIndex);
+            renderPreview();
+        });
+        document.getElementById('ctx-width')?.addEventListener('input', () => {
+            if (menuActiveKeyIndex === -1) return;
+            applyContextToState(menuActiveKeyIndex);
             renderPreview();
         });
         syncColorBadges();
@@ -595,6 +634,49 @@ function getKeyAtPoint(canvasX, canvasY) {
     return -1;
 }
 
+function getTrailAtPoint(canvasX, canvasY) {
+    const canvas = document.getElementById('editor-canvas');
+    const ws = document.getElementById('editor-workspace');
+    if (!canvas || !ws) return -1;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const size = parseInt(document.getElementById('setup-key-size')?.value || 60);
+    const keyH = parseInt(document.getElementById('setup-key-height')?.value || size);
+    const gap = parseInt(document.getElementById('setup-key-gap')?.value || 10);
+    const offX = state.config.key_offsets_x || [0,0,0,0];
+    const offY = state.config.key_offsets_y || [0,0,0,0];
+    const tOffX = state.config.trail_offsets_x || [0,0,0,0];
+    const tOffY = state.config.trail_offsets_y || [0,0,0,0];
+    const trailWidths = state.config.trail_widths || [50,50,50,50];
+
+    const totalW = size * 4 + gap * 3;
+    const startX = (W - totalW) / 2;
+    const baseY = H - keyH - 20;
+
+    const isLocked = state.config.lock_trails !== false;
+
+    for (let i = 0; i < 4; i++) {
+        const tw = trailWidths[i] || size;
+        let trailX, trailY;
+
+        if (isLocked) {
+            const currentKeyX = startX + i * (size + gap) + offX[i];
+            trailX = currentKeyX + (size - tw) / 2;
+            trailY = baseY + offY[i];
+        } else {
+            const baseKeyX = startX + i * (size + gap);
+            trailX = baseKeyX + (size - tw) / 2 + tOffX[i];
+            trailY = baseY + tOffY[i];
+        }
+
+        if (canvasX >= trailX && canvasX <= trailX + tw && canvasY >= 0 && canvasY <= trailY) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 function onCanvasMouseDown(e) {
     if (e.button !== 0) return;
     const rect = e.target.getBoundingClientRect();
@@ -723,6 +805,8 @@ function onMouseUp() {
 }
 
 function openContextMenu(x, y, i, isTrail = false) {
+    menuActiveKeyIndex = i;
+    menuActiveIsTrail = isTrail;
     const menu = document.getElementById('context-menu');
     menu.style.display = 'block';
     menu.style.left = Math.min(x, window.innerWidth - 240) + 'px';
@@ -746,15 +830,42 @@ function openContextMenu(x, y, i, isTrail = false) {
     } else {
         document.getElementById('ctx-x').value = state.config.key_offsets_x?.[i] || 0;
         document.getElementById('ctx-y').value = state.config.key_offsets_y?.[i] || 0;
+        const keys = state.config.keys || ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
+        const labels = state.config.key_labels || ['D', 'F', 'J', 'K'];
+        document.getElementById('ctx-bind').value = (keys[i] || '').replace('Key', '');
+        document.getElementById('ctx-label').value = labels[i] || '';
     }
 
     document.getElementById('ctx-width').value = state.config.trail_widths?.[i] || 50;
     document.getElementById('ctx-rgb').checked = state.config.rgb_enabled_keys?.[i] || false;
 
+    const applyAllCheckbox = document.getElementById('ctx-apply-all');
+    if (applyAllCheckbox) applyAllCheckbox.checked = false;
+
+    updateScopeIndicator();
     isListeningForBind = false;
 }
 
+function updateScopeIndicator() {
+    const indicator = document.getElementById('ctx-scope-indicator');
+    const applyAll = document.getElementById('ctx-apply-all')?.checked || false;
+    if (indicator) {
+        if (applyAll) {
+            indicator.textContent = menuActiveIsTrail 
+                ? 'Configuring all trails (Global)' 
+                : 'Configuring all keys (Global)';
+        } else {
+            indicator.textContent = menuActiveIsTrail 
+                ? `Configuring specific trail (Trail ${menuActiveKeyIndex + 1})` 
+                : `Configuring specific key (Key ${menuActiveKeyIndex + 1})`;
+        }
+    }
+}
+
 function applyContextToState(i) {
+    if (menuActiveKeyIndex === -1) return;
+    const idxToUse = menuActiveKeyIndex;
+
     if (!state.config.key_labels) state.config.key_labels = ['D','F','J','K'];
     if (!state.config.key_offsets_x) state.config.key_offsets_x = [0,0,0,0];
     if (!state.config.key_offsets_y) state.config.key_offsets_y = [0,0,0,0];
@@ -763,16 +874,36 @@ function applyContextToState(i) {
     if (!state.config.trail_widths) state.config.trail_widths = [50,50,50,50];
     if (!state.config.rgb_enabled_keys) state.config.rgb_enabled_keys = [false,false,false,false];
 
-    if (selectedIsTrail) {
-        state.config.trail_offsets_x[i] = parseInt(document.getElementById('ctx-x')?.value) || 0;
-        state.config.trail_offsets_y[i] = parseInt(document.getElementById('ctx-y')?.value) || 0;
+    const applyAll = document.getElementById('ctx-apply-all')?.checked || false;
+    const xVal = parseInt(document.getElementById('ctx-x')?.value) || 0;
+    const yVal = parseInt(document.getElementById('ctx-y')?.value) || 0;
+    const wVal = parseInt(document.getElementById('ctx-width')?.value) || 50;
+    const rgbVal = document.getElementById('ctx-rgb')?.checked || false;
+
+    if (applyAll) {
+        for (let idx = 0; idx < 4; idx++) {
+            if (menuActiveIsTrail) {
+                state.config.trail_offsets_x[idx] = xVal;
+                state.config.trail_offsets_y[idx] = yVal;
+            } else {
+                state.config.key_offsets_x[idx] = xVal;
+                state.config.key_offsets_y[idx] = yVal;
+            }
+            state.config.trail_widths[idx] = wVal;
+            state.config.rgb_enabled_keys[idx] = rgbVal;
+        }
     } else {
-        state.config.key_labels[i] = document.getElementById('ctx-label')?.value || '';
-        state.config.key_offsets_x[i] = parseInt(document.getElementById('ctx-x')?.value) || 0;
-        state.config.key_offsets_y[i] = parseInt(document.getElementById('ctx-y')?.value) || 0;
+        if (menuActiveIsTrail) {
+            state.config.trail_offsets_x[idxToUse] = xVal;
+            state.config.trail_offsets_y[idxToUse] = yVal;
+        } else {
+            state.config.key_labels[idxToUse] = document.getElementById('ctx-label')?.value || '';
+            state.config.key_offsets_x[idxToUse] = xVal;
+            state.config.key_offsets_y[idxToUse] = yVal;
+        }
+        state.config.trail_widths[idxToUse] = wVal;
+        state.config.rgb_enabled_keys[idxToUse] = rgbVal;
     }
-    state.config.trail_widths[i] = parseInt(document.getElementById('ctx-width')?.value) || 50;
-    state.config.rgb_enabled_keys[i] = document.getElementById('ctx-rgb')?.checked || false;
 }
 
 function syncColorBadges() {

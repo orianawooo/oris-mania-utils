@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-05-21 - Emergency Editor Hotfixes
+### Fixed
+- Fixed ReferenceError crash by defining isTauri and invoke in editor.js.
+- Implemented getTrailAtPoint to restore clicking and dragging unlocked trails.
+- Populated current key configs (labels, binds) when opening context menus to prevent state erasure.
+
 ## [0.2.0] - 2026-05-21 - Visual Editor, Overlay Revamp & Latency Polish
 ### Added
 - Redesigned visual editor using a dark-themed HTML5 Canvas matching the in-game overlay look.
