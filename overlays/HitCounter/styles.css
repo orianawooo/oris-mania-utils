@@ -1,16 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Urbanist:wght@500;600;700;800&display=swap');
 
 :root {
-    --ui-scale: 1.0;
+    --ui-scale: 1;
     --bg-opacity: 0.85;
-    --bg-color: rgba(10, 10, 18, var(--bg-opacity));
-    --text-color: #ffffff;
+    --text-color: #b7bfd4;
 }
 
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
     user-select: none;
 }
 
@@ -18,113 +17,59 @@ body {
     margin: 0;
     padding: 10px;
     background: transparent;
-    font-family: 'Inter', sans-serif;
-    color: var(--text-color);
     overflow: hidden;
+    color: var(--text-color);
+    font-family: 'Urbanist', 'Inter', sans-serif;
 }
 
 .hit-counter {
     position: relative;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 120px;
-    transform: scale(var(--ui-scale));
-    transform-origin: top left;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    display: block;
+    min-width: 128px;
+    min-height: 200px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+        0 10px 28px rgba(4, 8, 18, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .hit-counter::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--bg-color);
-    opacity: var(--bg-opacity);
-    z-index: -1;
+    inset: 0;
     border-radius: inherit;
-    transition: opacity 0.2s ease, background-color 0.2s ease;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    pointer-events: none;
 }
 
 .judgment-item {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    border-radius: 6px;
-    padding: 6px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s ease;
-}
-
-.judgment-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
+    position: absolute;
+    overflow: visible;
+    will-change: transform, left, top;
 }
 
 .j-header {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    position: absolute;
+    inset: 0;
 }
 
-.j-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    display: inline-block;
+.j-dot,
+.j-label,
+.j-val {
+    position: absolute;
+    display: block;
+    white-space: nowrap;
 }
 
 .j-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    color: #8b8ba8;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .j-val {
-    font-size: 0.9rem;
-    font-weight: 700;
     font-variant-numeric: tabular-nums;
-}
-
-/* Colors for judgments */
-.max .j-dot { background: #fff; box-shadow: 0 0 4px #fff; }
-.max .j-val { color: #fff; text-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-
-.perf .j-dot { background: #fbc531; box-shadow: 0 0 4px #fbc531; }
-.perf .j-val { color: #fbc531; text-shadow: 0 0 5px rgba(251, 197, 49, 0.3); }
-
-.great .j-dot { background: #4cd137; box-shadow: 0 0 4px #4cd137; }
-.great .j-val { color: #4cd137; text-shadow: 0 0 5px rgba(76, 209, 55, 0.3); }
-
-.good .j-dot { background: #00a8ff; box-shadow: 0 0 4px #00a8ff; }
-.good .j-val { color: #00a8ff; text-shadow: 0 0 5px rgba(0, 168, 255, 0.3); }
-
-.bad .j-dot { background: #e84118; box-shadow: 0 0 4px #e84118; }
-.bad .j-val { color: #e84118; text-shadow: 0 0 5px rgba(232, 65, 24, 0.3); }
-
-.miss .j-dot { background: #7f8c8d; }
-.miss .j-val { color: #7f8c8d; }
-
-/* Horizontal layout overrides */
-.hit-counter[style*="flex-direction: row"] {
-    width: auto;
-    gap: 8px;
-    align-items: center;
-}
-
-.hit-counter[style*="flex-direction: row"] .judgment-item {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 10px;
-    gap: 8px;
 }

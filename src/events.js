@@ -1,15 +1,53 @@
 import { initVisualEditor } from './editor.js';
 import { state } from './state.js';
-import { saveVisualSettings, populateSettingsPanel } from './config.js';
+import { saveVisualSettings, populateSettingsPanel, applyVisualSettings } from './config.js';
 import { setupTosuConnection } from './api.js';
+import { applyConfigSnapshot, setPersistedConfigBaseline } from './config-store.js';
+import { applyKeystrokeDefaults } from './default-config.js';
 
 const isTauri = typeof window.__TAURI__ !== 'undefined';
 const invoke = isTauri ? window.__TAURI__.core.invoke : async () => {};
 
 let listeningForKeyIndex = null;
+const TAB_REQUIREMENT_MESSAGE = 'Install this overlay first to unlock its editor.';
+
+async function refreshBootstrapState(onValidatePath, onValidateTosuPath) {
+    if (!isTauri) return null;
+
+    const bootstrap = await invoke('bootstrap_environment');
+    if (bootstrap && bootstrap.config) {
+        applyConfigSnapshot(bootstrap.config);
+        setPersistedConfigBaseline(bootstrap.config);
+        populateSettingsPanel();
+        syncVisibleSkillButtons();
+        if (onValidatePath && state.config.osu_songs_path) onValidatePath(state.config.osu_songs_path);
+        if (onValidateTosuPath && state.config.tosu_root_path) onValidateTosuPath(state.config.tosu_root_path);
+    }
+    return bootstrap;
+}
+
+function syncVisibleSkillButtons() {
+    const skills = ['stream', 'jumpstream', 'handstream', 'stamina', 'jackspeed', 'chordjack', 'technical'];
+    if (!state.config.visible_skills) state.config.visible_skills = {};
+
+    skills.forEach(skill => {
+        const pill = document.getElementById(`btn-${skill}`);
+        const active = state.config.visible_skills[skill] !== false;
+        if (pill) pill.classList.toggle('active', active);
+    });
+}
+
+async function toggleVisibleSkill(skill) {
+    if (!state.config.visible_skills) state.config.visible_skills = {};
+    const nextValue = state.config.visible_skills[skill] === false;
+    state.config.visible_skills[skill] = nextValue;
+    syncVisibleSkillButtons();
+    applyVisualSettings();
+    await saveVisualSettings();
+}
 
 export function initUIListeners(callbacks = {}) {
-    const { onValidatePath, onConnectTosu } = callbacks;
+    const { onValidatePath, onValidateTosuPath, onConnectTosu, onBootstrapState } = callbacks;
     const opacitySlider = document.getElementById('setup-opacity');
     const scaleSlider = document.getElementById('setup-scale');
     const radarToggle = document.getElementById('setup-radar');
@@ -34,55 +72,6 @@ export function initUIListeners(callbacks = {}) {
     if (particlesToggle) {
         particlesToggle.addEventListener('change', (e) => {
             state.config.show_particles = e.target.checked;
-            readAndSaveSetupSettings();
-        });
-    }
-
-    const hitOpacitySlider = document.getElementById('setup-hit-opacity');
-    const hitScaleSlider = document.getElementById('setup-hit-scale');
-    const hitBgColorInput = document.getElementById('setup-hit-bg-color');
-    const hitTextColorInput = document.getElementById('setup-hit-text-color');
-    const hitBorderStyleSelect = document.getElementById('setup-hit-border-style');
-    const hitOrientationSelect = document.getElementById('setup-hit-orientation');
-    
-    if (hitOpacitySlider) {
-        hitOpacitySlider.addEventListener('input', (e) => {
-            state.config.hitcounter_opacity = parseFloat(e.target.value);
-            readAndSaveSetupSettings();
-        });
-    }
-    
-    if (hitScaleSlider) {
-        hitScaleSlider.addEventListener('input', (e) => {
-            state.config.hitcounter_scale = parseFloat(e.target.value);
-            readAndSaveSetupSettings();
-        });
-    }
-
-    if (hitBgColorInput) {
-        hitBgColorInput.addEventListener('input', (e) => {
-            state.config.hitcounter_bg_color = e.target.value;
-            readAndSaveSetupSettings();
-        });
-    }
-
-    if (hitTextColorInput) {
-        hitTextColorInput.addEventListener('input', (e) => {
-            state.config.hitcounter_text_color = e.target.value;
-            readAndSaveSetupSettings();
-        });
-    }
-
-    if (hitBorderStyleSelect) {
-        hitBorderStyleSelect.addEventListener('change', (e) => {
-            state.config.hitcounter_border_style = e.target.value;
-            readAndSaveSetupSettings();
-        });
-    }
-
-    if (hitOrientationSelect) {
-        hitOrientationSelect.addEventListener('change', (e) => {
-            state.config.hitcounter_orientation = e.target.value;
             readAndSaveSetupSettings();
         });
     }
@@ -159,6 +148,26 @@ export function initUIListeners(callbacks = {}) {
 
     initVisualEditor();
 
+    const skillButtons = {
+        stream: document.getElementById('btn-stream'),
+        jumpstream: document.getElementById('btn-jumpstream'),
+        handstream: document.getElementById('btn-handstream'),
+        stamina: document.getElementById('btn-stamina'),
+        jackspeed: document.getElementById('btn-jackspeed'),
+        chordjack: document.getElementById('btn-chordjack'),
+        technical: document.getElementById('btn-technical'),
+    };
+    Object.entries(skillButtons).forEach(([skill, pill]) => {
+        if (pill) {
+            pill.type = 'button';
+            pill.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await toggleVisibleSkill(skill);
+            });
+        }
+    });
+    syncVisibleSkillButtons();
+
     const exploreBtn = document.getElementById('explore-btn');
     if (exploreBtn) {
         exploreBtn.addEventListener('click', async () => {
@@ -169,6 +178,46 @@ export function initUIListeners(callbacks = {}) {
                     songsPathInput.value = folder;
                     if (onValidatePath) onValidatePath(folder);
                 }
+                await readAndSaveSetupSettings({ immediate: true, reason: 'songs-folder-picked' });
+                const bootstrap = await refreshBootstrapState(onValidatePath, onValidateTosuPath);
+                if (onBootstrapState) onBootstrapState(bootstrap);
+            }
+        });
+    }
+
+    const browseTosuBtn = document.getElementById('browse-tosu-btn');
+    if (browseTosuBtn) {
+        browseTosuBtn.addEventListener('click', async () => {
+            const folder = await invoke('select_tosu_folder');
+            if (folder) {
+                const tosuPathInput = document.getElementById('tosu-path-input');
+                if (tosuPathInput) {
+                    tosuPathInput.value = folder;
+                    if (onValidateTosuPath) onValidateTosuPath(folder);
+                }
+                await readAndSaveSetupSettings({ immediate: true, reason: 'tosu-folder-picked' });
+                const bootstrap = await refreshBootstrapState(onValidatePath, onValidateTosuPath);
+                if (onBootstrapState) onBootstrapState(bootstrap);
+            }
+        });
+    }
+
+    const detectTosuBtn = document.getElementById('detect-tosu-btn');
+    if (detectTosuBtn) {
+        detectTosuBtn.addEventListener('click', async () => {
+            const folder = await invoke('detect_tosu_root_path');
+            const tosuPathInput = document.getElementById('tosu-path-input');
+            if (folder) {
+                if (tosuPathInput) {
+                    tosuPathInput.value = folder;
+                    if (onValidateTosuPath) onValidateTosuPath(folder);
+                }
+                await readAndSaveSetupSettings({ immediate: true, reason: 'tosu-detected' });
+                const bootstrap = await refreshBootstrapState(onValidatePath, onValidateTosuPath);
+                if (onBootstrapState) onBootstrapState(bootstrap);
+            } else if (tosuPathInput) {
+                tosuPathInput.focus();
+                if (onValidateTosuPath) onValidateTosuPath(tosuPathInput.value.trim());
             }
         });
     }
@@ -177,6 +226,13 @@ export function initUIListeners(callbacks = {}) {
     if (songsPathInput) {
         songsPathInput.addEventListener('input', (e) => {
             if (onValidatePath) onValidatePath(e.target.value.trim());
+        });
+    }
+
+    const tosuPathInput = document.getElementById('tosu-path-input');
+    if (tosuPathInput) {
+        tosuPathInput.addEventListener('input', (e) => {
+            if (onValidateTosuPath) onValidateTosuPath(e.target.value.trim());
         });
     }
 
@@ -198,7 +254,9 @@ export function initUIListeners(callbacks = {}) {
     const saveConfigBtn = document.getElementById('save-config-btn');
     if (saveConfigBtn) {
         saveConfigBtn.addEventListener('click', async () => {
-            await readAndSaveSetupSettings();
+            await readAndSaveSetupSettings({ immediate: true, reason: 'manual-save' });
+            const bootstrap = await refreshBootstrapState(onValidatePath, onValidateTosuPath);
+            if (onBootstrapState) onBootstrapState(bootstrap);
         });
     }
 
@@ -250,7 +308,7 @@ export function initUIListeners(callbacks = {}) {
             guideBtn.classList.remove('pulse-glow');
             if (state.config && !state.config.has_run_before) {
                 state.config.has_run_before = true;
-                await readAndSaveSetupSettings();
+                await readAndSaveSetupSettings({ immediate: true, reason: 'guide-opened' });
             }
         });
     }
@@ -318,29 +376,10 @@ export function initUIListeners(callbacks = {}) {
     const resetKeysBtn = document.getElementById('setup-keys-reset-btn');
     if (resetKeysBtn) {
         resetKeysBtn.addEventListener('click', async () => {
-            state.config.key_color_outer = "#00d2ff";
-            state.config.key_color_inner = "#ff007f";
-            state.config.key_size = 60;
-            state.config.key_gap = 10;
-            state.config.show_trails = true;
-            state.config.trail_opacity = 0.6;
-            state.config.trail_fade = 0.0;
-            state.config.trail_speed = 6.0;
-            state.config.trail_height = 800;
-            state.config.trail_widths = [50, 50, 50, 50];
-            state.config.key_labels = ["D", "F", "J", "K"];
-            state.config.rgb_enabled_keys = [false, false, false, false];
-            state.config.rgb_speed = 1.0;
-            state.config.keys_bg_color = "#0a0a12";
-            state.config.keys_bg_opacity = 0.7;
-            state.config.key_offsets_x = [0, 0, 0, 0];
-            state.config.key_offsets_y = [0, 0, 0, 0];
-            state.config.lock_trails = true;
-            state.config.trail_offsets_x = [0, 0, 0, 0];
-            state.config.keys = ["KeyD", "KeyF", "KeyJ", "KeyK"];
+            applyKeystrokeDefaults(state.config);
             
             populateSettingsPanel();
-            await readAndSaveSetupSettings();
+            await readAndSaveSetupSettings({ immediate: true, reason: 'reset-keystrokes' });
         });
     }
 
@@ -351,25 +390,26 @@ export function initUIListeners(callbacks = {}) {
 function initTheme() {
     const themeBtn = document.getElementById('theme-toggle-btn');
     const setupScreen = document.getElementById('setup-screen');
+    const applyTheme = (theme) => {
+        document.documentElement.dataset.theme = theme;
+        document.body.dataset.theme = theme;
+        if (setupScreen) {
+            setupScreen.classList.toggle('dark-mode', theme === 'dark');
+        }
+        if (themeBtn) {
+            themeBtn.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+    };
     
     if (themeBtn && setupScreen) {
         themeBtn.addEventListener('click', () => {
-            setupScreen.classList.toggle('dark-mode');
-            
-            if (setupScreen.classList.contains('dark-mode')) {
-                themeBtn.textContent = 'Light Mode';
-            } else {
-                themeBtn.textContent = 'Dark Mode';
-            }
-            
-            localStorage.setItem('theme', setupScreen.classList.contains('dark-mode') ? 'dark' : 'light');
+            const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(nextTheme);
+            localStorage.setItem('theme', nextTheme);
         });
         
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            setupScreen.classList.add('dark-mode');
-            themeBtn.textContent = 'Light Mode';
-        }
+        const savedTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+        applyTheme(savedTheme);
     }
 }
 
@@ -377,27 +417,73 @@ function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
 
+    function activateTab(tabId) {
+        tabButtons.forEach((b) => b.classList.remove('active'));
+        tabPanes.forEach((p) => p.classList.remove('active'));
+
+        const activeButton = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        const targetPane = document.getElementById(`${tabId}-tab`);
+        if (activeButton) activeButton.classList.add('active');
+        if (targetPane) {
+            targetPane.classList.add('active');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    targetPane.dispatchEvent(new CustomEvent('ori:tab-activated', { bubbles: true, detail: { tabId } }));
+                    document.dispatchEvent(new CustomEvent('ori:tab-activated', { detail: { tabId } }));
+                });
+            });
+        }
+    }
+
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
+            if (btn.disabled) {
+                return;
+            }
             const tabId = btn.getAttribute('data-tab');
-            
-            tabButtons.forEach(b => b.classList.remove('active'));
-            tabPanes.forEach(p => p.classList.remove('active'));
-            
-            btn.classList.add('active');
-            const targetPane = document.getElementById(`${tabId}-tab`);
-            if (targetPane) targetPane.classList.add('active');
+            activateTab(tabId);
         });
     });
+
+    setEditorTabAvailability([]);
+}
+
+export function setEditorTabAvailability(overlayStatuses = []) {
+    const statusMap = new Map((overlayStatuses || []).map((status) => [status.name, !!status.installed]));
+    const tabButtons = document.querySelectorAll('.tab-btn[data-required-overlay]');
+
+    tabButtons.forEach((button) => {
+        const overlayName = button.getAttribute('data-required-overlay');
+        const installed = statusMap.get(overlayName) === true;
+        button.disabled = !installed;
+        button.classList.toggle('locked', !installed);
+        button.setAttribute('aria-disabled', installed ? 'false' : 'true');
+        button.title = installed ? '' : TAB_REQUIREMENT_MESSAGE;
+    });
+
+    const activeLockedTab = document.querySelector('.tab-btn.active[data-required-overlay][disabled]');
+    if (activeLockedTab) {
+        const msdButton = document.querySelector('.tab-btn[data-tab="msd"]');
+        const msdPane = document.getElementById('msd-tab');
+        document.querySelectorAll('.tab-btn').forEach((button) => button.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach((pane) => pane.classList.remove('active'));
+        if (msdButton) msdButton.classList.add('active');
+        if (msdPane) msdPane.classList.add('active');
+    }
 }
 
 
 
-export async function readAndSaveSetupSettings() {
+export async function readAndSaveSetupSettings(options = {}) {
+    const { immediate = false, reason = 'ui' } = options;
     try {
         const songsPathInput = document.getElementById('songs-path-input');
         const path = songsPathInput ? songsPathInput.value.trim() : '';
         state.config.osu_songs_path = path;
+
+        const tosuPathInput = document.getElementById('tosu-path-input');
+        const tosuPath = tosuPathInput ? tosuPathInput.value.trim() : '';
+        state.config.tosu_root_path = tosuPath;
         
         if (!state.config.keys) state.config.keys = ["KeyD", "KeyF", "KeyJ", "KeyK"];
         for (let i = 0; i < 4; i++) {
@@ -421,6 +507,41 @@ export async function readAndSaveSetupSettings() {
         const hitTextColorEl = document.getElementById('setup-hit-text-color');
         const hitBorderStyleEl = document.getElementById('setup-hit-border-style');
         const hitOrientationEl = document.getElementById('setup-hit-orientation');
+        const bgEnabledEl = document.getElementById('setup-bg-enabled');
+        const bgOffsetXEl = document.getElementById('setup-bg-offset-x');
+        const bgOffsetYEl = document.getElementById('setup-bg-offset-y');
+        const bgWidthEl = document.getElementById('setup-bg-width');
+        const bgHeightEl = document.getElementById('setup-bg-height');
+        const bgPaddingEl = document.getElementById('setup-bg-padding');
+        const bgRadiusEl = document.getElementById('setup-bg-radius');
+        const bgScaleEl = document.getElementById('setup-bg-scale');
+        const bgRotationEl = document.getElementById('setup-bg-rotation');
+        const bgShapeEl = document.getElementById('setup-bg-shape');
+        const bgLayerEl = document.getElementById('setup-bg-layer');
+        const trailLayerEl = document.getElementById('setup-trail-layer');
+        const keyLayerEl = document.getElementById('setup-key-layer');
+        const hitBorderColorEl = document.getElementById('setup-hit-border-color');
+        const hitFontEl = document.getElementById('setup-hit-font');
+        const hitPosXEl = document.getElementById('setup-hit-pos-x');
+        const hitPosYEl = document.getElementById('setup-hit-pos-y');
+        const hitPaddingEl = document.getElementById('setup-hit-padding');
+        const hitGapEl = document.getElementById('setup-hit-gap');
+        const hitItemWidthEl = document.getElementById('setup-hit-item-width');
+        const hitItemHeightEl = document.getElementById('setup-hit-item-height');
+        const hitRadiusEl = document.getElementById('setup-hit-radius');
+        const hitDotSizeEl = document.getElementById('setup-hit-dot-size');
+        const hitLabelSizeEl = document.getElementById('setup-hit-label-size');
+        const hitValueSizeEl = document.getElementById('setup-hit-value-size');
+        const hitGlowEl = document.getElementById('setup-hit-glow');
+        const particleCountEl = document.getElementById('setup-particle-count');
+        const particleMinSizeEl = document.getElementById('setup-particle-min-size');
+        const particleSizeEl = document.getElementById('setup-particle-size');
+        const particleSpreadEl = document.getElementById('setup-particle-spread');
+        const particleLifeEl = document.getElementById('setup-particle-life');
+        const particleGravityEl = document.getElementById('setup-particle-gravity');
+        const particleSpeedEl = document.getElementById('setup-particle-speed');
+        const particleRgbEl = document.getElementById('setup-particle-rgb');
+        const particleShapeEl = document.getElementById('setup-particle-shape');
         
         if (opacityEl) state.config.bg_opacity = parseFloat(opacityEl.value);
         if (accentEl) state.config.accent_color = accentEl.value;
@@ -431,8 +552,43 @@ export async function readAndSaveSetupSettings() {
         if (hitBgColorEl) state.config.hitcounter_bg_color = hitBgColorEl.value;
         if (hitTextColorEl) state.config.hitcounter_text_color = hitTextColorEl.value;
         if (hitBorderStyleEl) state.config.hitcounter_border_style = hitBorderStyleEl.value;
+        if (hitBorderColorEl) state.config.hitcounter_border_color = hitBorderColorEl.value;
         if (hitOrientationEl) state.config.hitcounter_orientation = hitOrientationEl.value;
+        if (hitFontEl) state.config.hitcounter_font = hitFontEl.value;
+        if (hitPosXEl) state.config.hitcounter_position_x = parseInt(hitPosXEl.value) || 0;
+        if (hitPosYEl) state.config.hitcounter_position_y = parseInt(hitPosYEl.value) || 0;
+        if (hitPaddingEl) state.config.hitcounter_padding = parseInt(hitPaddingEl.value) || 0;
+        if (hitGapEl) state.config.hitcounter_gap = parseInt(hitGapEl.value) || 0;
+        if (hitItemWidthEl) state.config.hitcounter_item_width = parseInt(hitItemWidthEl.value) || 118;
+        if (hitItemHeightEl) state.config.hitcounter_item_height = parseInt(hitItemHeightEl.value) || 72;
+        if (hitRadiusEl) state.config.hitcounter_item_radius = parseInt(hitRadiusEl.value) || 16;
+        if (hitDotSizeEl) state.config.hitcounter_dot_size = parseInt(hitDotSizeEl.value) || 8;
+        if (hitLabelSizeEl) state.config.hitcounter_label_size = parseFloat(hitLabelSizeEl.value) || 12;
+        if (hitValueSizeEl) state.config.hitcounter_value_size = parseFloat(hitValueSizeEl.value) || 24;
+        if (hitGlowEl) state.config.hitcounter_glow_strength = parseFloat(hitGlowEl.value) || 0.35;
         if (particlesEl) state.config.show_particles = particlesEl.checked;
+        if (bgEnabledEl) state.config.keys_bg_enabled = bgEnabledEl.checked;
+        if (bgOffsetXEl) state.config.keys_bg_offset_x = parseInt(bgOffsetXEl.value) || 0;
+        if (bgOffsetYEl) state.config.keys_bg_offset_y = parseInt(bgOffsetYEl.value) || 0;
+        if (bgWidthEl) state.config.keys_bg_width = parseInt(bgWidthEl.value) || 0;
+        if (bgHeightEl) state.config.keys_bg_height = parseInt(bgHeightEl.value) || 0;
+        if (bgPaddingEl) state.config.keys_bg_padding = parseInt(bgPaddingEl.value) || 0;
+        if (bgRadiusEl) state.config.keys_bg_radius = parseInt(bgRadiusEl.value) || 0;
+        if (bgScaleEl) state.config.keys_bg_scale = parseFloat(bgScaleEl.value) || 1;
+        if (bgRotationEl) state.config.keys_bg_rotation = parseFloat(bgRotationEl.value) || 0;
+        if (bgShapeEl) state.config.keys_bg_shape = bgShapeEl.value || 'rounded';
+        if (bgLayerEl) state.config.bg_layer = parseInt(bgLayerEl.value) || 6;
+        if (trailLayerEl) state.config.trail_layer = parseInt(trailLayerEl.value) || 8;
+        if (keyLayerEl) state.config.key_layer = parseInt(keyLayerEl.value) || 10;
+        if (particleCountEl) state.config.particle_count = parseInt(particleCountEl.value) || 0;
+        if (particleMinSizeEl) state.config.particle_min_size = parseInt(particleMinSizeEl.value) || 1;
+        if (particleSizeEl) state.config.particle_max_size = parseInt(particleSizeEl.value) || 1;
+        if (particleSpreadEl) state.config.particle_spread = parseInt(particleSpreadEl.value) || 0;
+        if (particleLifeEl) state.config.particle_life = parseFloat(particleLifeEl.value) || 0;
+        if (particleGravityEl) state.config.particle_gravity = parseFloat(particleGravityEl.value) || 0;
+        if (particleSpeedEl) state.config.particle_speed = parseFloat(particleSpeedEl.value) || 0;
+        if (particleRgbEl) state.config.particle_rgb = particleRgbEl.checked;
+        if (particleShapeEl) state.config.particle_shape = particleShapeEl.value;
         
         const colorOuterEl = document.getElementById('setup-key-color-outer');
         const colorInnerEl = document.getElementById('setup-key-color-inner');
@@ -527,8 +683,7 @@ export async function readAndSaveSetupSettings() {
             if (pill) state.config.visible_skills[skill] = pill.classList.contains('active');
         });
         
-        await saveVisualSettings();
-        if (onConnectTosu) onConnectTosu();
+        await saveVisualSettings({ immediate, reason });
         
         let toast = document.getElementById('autosave-toast');
         if (!toast) {
@@ -539,6 +694,7 @@ export async function readAndSaveSetupSettings() {
             document.body.appendChild(toast);
         }
         toast.classList.add('visible');
+        document.dispatchEvent(new CustomEvent('config-saved', { detail: { config: state.config } }));
         clearTimeout(window._toastTimeout);
         window._toastTimeout = setTimeout(() => {
             toast.classList.remove('visible');

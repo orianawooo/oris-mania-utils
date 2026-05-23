@@ -70,7 +70,10 @@ function connectConfigSocket() {
     ws.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            if (data.event === 'bindings') {
+            const scopes = Array.isArray(data.changed_scopes) ? data.changed_scopes : [];
+            const isRelevant = data.event === 'config-updated'
+                && (scopes.length === 0 || scopes.includes('msdconverter') || scopes.includes('all'));
+            if (isRelevant) {
                 Object.assign(state.config, data);
                 applyVisualSettings();
             }

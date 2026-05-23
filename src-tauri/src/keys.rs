@@ -98,6 +98,16 @@ pub async fn start_key_server(app: tauri::AppHandle) {
                 let config = crate::config::read_config();
                 let mut val = serde_json::to_value(&config).unwrap_or_default();
                 if let Some(obj) = val.as_object_mut() {
+                    obj.insert("event".to_string(), serde_json::json!("config-updated"));
+                    obj.insert(
+                        "changed_scopes".to_string(),
+                        serde_json::json!(["msdconverter", "HitCounter", "ManiaKeystrokes"]),
+                    );
+                }
+                let config_msg = val.to_string();
+                let _ = ws_sender.send(tokio_tungstenite::tungstenite::Message::Text(config_msg)).await;
+
+                if let Some(obj) = val.as_object_mut() {
                     obj.insert("event".to_string(), serde_json::json!("bindings"));
                 }
                 let bindings_msg = val.to_string();

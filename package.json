@@ -1,10 +1,14 @@
 {
   "name": "oris-mania-utils",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check": "cargo check --manifest-path src-tauri/Cargo.toml && node --check src/default-config.js && node --check src/config-store.js && node --check src/perf.js && node --check src/main.js && node --check src/config.js && node --check src/events.js && node --check src/editor.js && node --check src/hitcounter-editor.js && node --check src/keystrokes.js",
+    "smoke": "node scripts/smoke-check.mjs",
+    "build:desktop": "tauri build --bundles msi",
+    "release:prep": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2"

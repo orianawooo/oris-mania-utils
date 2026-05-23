@@ -1,13 +1,18 @@
 import { state } from './state.js';
+import { saveConfig } from './config-store.js';
 
 const isTauri = typeof window.__TAURI__ !== 'undefined';
 const invoke = isTauri ? window.__TAURI__.core.invoke : async () => {};
 
+function normalizeHexHitColor(color, fallback) {
+    const match = String(color || '').match(/^#([0-9a-f]{6})$/i);
+    return match ? match[0] : fallback;
+}
+
 export function applyVisualSettings() {
     document.documentElement.style.setProperty('--bg-opacity', state.config.bg_opacity || 0.85);
     
-    let accent = state.config.accent_color || '#a67c52';
-    if (accent === '#ff69b4' || accent === '#7c3aed') accent = '#a67c52';
+    const accent = state.config.accent_color || '#ff8ab3';
     document.documentElement.style.setProperty('--accent-color', accent);
     
     document.documentElement.style.setProperty('--ui-scale', state.config.scale || 1.0);
@@ -24,6 +29,8 @@ export function applyVisualSettings() {
             }
             const toggle = document.getElementById(`toggle-${skill}`);
             if (toggle) toggle.checked = visible;
+            const pill = document.getElementById(`btn-${skill}`);
+            if (pill) pill.classList.toggle('active', !!visible);
         }
     }
 
@@ -49,7 +56,7 @@ export function applyVisualSettings() {
     const radarToggle = document.getElementById('radar-toggle');
     
     if (opacitySlider) opacitySlider.value = state.config.bg_opacity || 0.85;
-    if (accentColorPicker) accentColorPicker.value = state.config.accent_color || '#7c3aed';
+    if (accentColorPicker) accentColorPicker.value = state.config.accent_color || '#ff8ab3';
     if (scaleSlider) scaleSlider.value = state.config.scale || 1.0;
     if (radarToggle) radarToggle.checked = state.config.show_radar !== false;
 }
@@ -64,6 +71,16 @@ export function populateSettingsPanel() {
                 input.value = state.config.keys[i].replace('Key', '');
             }
         }
+    }
+
+    const songsPathInput = document.getElementById('songs-path-input');
+    if (songsPathInput && state.config.osu_songs_path) {
+        songsPathInput.value = state.config.osu_songs_path;
+    }
+
+    const tosuPathInput = document.getElementById('tosu-path-input');
+    if (tosuPathInput && state.config.tosu_root_path) {
+        tosuPathInput.value = state.config.tosu_root_path;
     }
     
     const opacityEl = document.getElementById('setup-opacity');
@@ -90,11 +107,58 @@ export function populateSettingsPanel() {
     const hitBorderStyleEl = document.getElementById('setup-hit-border-style');
     if (hitBorderStyleEl && state.config.hitcounter_border_style) hitBorderStyleEl.value = state.config.hitcounter_border_style;
 
+    const hitBorderColorEl = document.getElementById('setup-hit-border-color');
+    if (hitBorderColorEl && state.config.hitcounter_border_color) hitBorderColorEl.value = normalizeHexHitColor(state.config.hitcounter_border_color, '#e6bfd4');
+
     const hitOrientationEl = document.getElementById('setup-hit-orientation');
     if (hitOrientationEl && state.config.hitcounter_orientation) hitOrientationEl.value = state.config.hitcounter_orientation;
+
+    const hitFontEl = document.getElementById('setup-hit-font');
+    if (hitFontEl && state.config.hitcounter_font) hitFontEl.value = state.config.hitcounter_font;
     
     const particlesEl = document.getElementById('setup-particles');
     if (particlesEl && state.config.show_particles !== undefined) particlesEl.checked = state.config.show_particles;
+
+    const particleCountEl = document.getElementById('setup-particle-count');
+    if (particleCountEl && state.config.particle_count !== undefined) particleCountEl.value = state.config.particle_count;
+    const particleCountVal = document.getElementById('val-particle-count');
+    if (particleCountVal && state.config.particle_count !== undefined) particleCountVal.textContent = state.config.particle_count;
+
+    const particleSizeEl = document.getElementById('setup-particle-size');
+    if (particleSizeEl && state.config.particle_max_size !== undefined) particleSizeEl.value = state.config.particle_max_size;
+    const particleSizeVal = document.getElementById('val-particle-size');
+    if (particleSizeVal && state.config.particle_max_size !== undefined) particleSizeVal.textContent = state.config.particle_max_size;
+
+    const particleMinSizeEl = document.getElementById('setup-particle-min-size');
+    if (particleMinSizeEl && state.config.particle_min_size !== undefined) particleMinSizeEl.value = state.config.particle_min_size;
+    const particleMinSizeVal = document.getElementById('val-particle-min-size');
+    if (particleMinSizeVal && state.config.particle_min_size !== undefined) particleMinSizeVal.textContent = state.config.particle_min_size;
+
+    const particleSpreadEl = document.getElementById('setup-particle-spread');
+    if (particleSpreadEl && state.config.particle_spread !== undefined) particleSpreadEl.value = state.config.particle_spread;
+    const particleSpreadVal = document.getElementById('val-particle-spread');
+    if (particleSpreadVal && state.config.particle_spread !== undefined) particleSpreadVal.textContent = state.config.particle_spread;
+
+    const particleLifeEl = document.getElementById('setup-particle-life');
+    if (particleLifeEl && state.config.particle_life !== undefined) particleLifeEl.value = state.config.particle_life;
+    const particleLifeVal = document.getElementById('val-particle-life');
+    if (particleLifeVal && state.config.particle_life !== undefined) particleLifeVal.textContent = Number(state.config.particle_life).toFixed(1);
+
+    const particleGravityEl = document.getElementById('setup-particle-gravity');
+    if (particleGravityEl && state.config.particle_gravity !== undefined) particleGravityEl.value = state.config.particle_gravity;
+    const particleGravityVal = document.getElementById('val-particle-gravity');
+    if (particleGravityVal && state.config.particle_gravity !== undefined) particleGravityVal.textContent = Number(state.config.particle_gravity).toFixed(2);
+
+    const particleSpeedEl = document.getElementById('setup-particle-speed');
+    if (particleSpeedEl && state.config.particle_speed !== undefined) particleSpeedEl.value = state.config.particle_speed;
+    const particleSpeedVal = document.getElementById('val-particle-speed');
+    if (particleSpeedVal && state.config.particle_speed !== undefined) particleSpeedVal.textContent = Number(state.config.particle_speed).toFixed(1);
+
+    const particleRgbEl = document.getElementById('setup-particle-rgb');
+    if (particleRgbEl && state.config.particle_rgb !== undefined) particleRgbEl.checked = state.config.particle_rgb;
+
+    const particleShapeEl = document.getElementById('setup-particle-shape');
+    if (particleShapeEl && state.config.particle_shape) particleShapeEl.value = state.config.particle_shape;
     
     const radarEl = document.getElementById('setup-radar');
     if (radarEl && state.config.show_radar !== undefined) radarEl.checked = state.config.show_radar;
@@ -159,6 +223,57 @@ export function populateSettingsPanel() {
 
     const bgColEl = document.getElementById('setup-bg-color');
     if (bgColEl && state.config.keys_bg_color) bgColEl.value = state.config.keys_bg_color;
+
+    const bgEnabledEl = document.getElementById('setup-bg-enabled');
+    if (bgEnabledEl && state.config.keys_bg_enabled !== undefined) bgEnabledEl.checked = state.config.keys_bg_enabled;
+
+    const bgOffsetXEl = document.getElementById('setup-bg-offset-x');
+    if (bgOffsetXEl && state.config.keys_bg_offset_x !== undefined) bgOffsetXEl.value = state.config.keys_bg_offset_x;
+    const bgOffsetXVal = document.getElementById('val-bg-offset-x');
+    if (bgOffsetXVal && state.config.keys_bg_offset_x !== undefined) bgOffsetXVal.textContent = state.config.keys_bg_offset_x;
+
+    const bgOffsetYEl = document.getElementById('setup-bg-offset-y');
+    if (bgOffsetYEl && state.config.keys_bg_offset_y !== undefined) bgOffsetYEl.value = state.config.keys_bg_offset_y;
+    const bgOffsetYVal = document.getElementById('val-bg-offset-y');
+    if (bgOffsetYVal && state.config.keys_bg_offset_y !== undefined) bgOffsetYVal.textContent = state.config.keys_bg_offset_y;
+
+    const bgWidthEl = document.getElementById('setup-bg-width');
+    if (bgWidthEl && state.config.keys_bg_width !== undefined) bgWidthEl.value = state.config.keys_bg_width;
+
+    const bgHeightEl = document.getElementById('setup-bg-height');
+    if (bgHeightEl && state.config.keys_bg_height !== undefined) bgHeightEl.value = state.config.keys_bg_height;
+
+    const bgPaddingEl = document.getElementById('setup-bg-padding');
+    if (bgPaddingEl && state.config.keys_bg_padding !== undefined) bgPaddingEl.value = state.config.keys_bg_padding;
+    const bgPaddingVal = document.getElementById('val-bg-padding');
+    if (bgPaddingVal && state.config.keys_bg_padding !== undefined) bgPaddingVal.textContent = state.config.keys_bg_padding;
+
+    const bgRadiusEl = document.getElementById('setup-bg-radius');
+    if (bgRadiusEl && state.config.keys_bg_radius !== undefined) bgRadiusEl.value = state.config.keys_bg_radius;
+    const bgRadiusVal = document.getElementById('val-bg-radius');
+    if (bgRadiusVal && state.config.keys_bg_radius !== undefined) bgRadiusVal.textContent = state.config.keys_bg_radius;
+
+    const bgScaleEl = document.getElementById('setup-bg-scale');
+    if (bgScaleEl && state.config.keys_bg_scale !== undefined) bgScaleEl.value = state.config.keys_bg_scale;
+    const bgScaleVal = document.getElementById('val-bg-scale');
+    if (bgScaleVal && state.config.keys_bg_scale !== undefined) bgScaleVal.textContent = Number(state.config.keys_bg_scale).toFixed(2);
+
+    const bgRotationEl = document.getElementById('setup-bg-rotation');
+    if (bgRotationEl && state.config.keys_bg_rotation !== undefined) bgRotationEl.value = state.config.keys_bg_rotation;
+    const bgRotationVal = document.getElementById('val-bg-rotation');
+    if (bgRotationVal && state.config.keys_bg_rotation !== undefined) bgRotationVal.textContent = Number(state.config.keys_bg_rotation).toFixed(0);
+
+    const bgShapeEl = document.getElementById('setup-bg-shape');
+    if (bgShapeEl && state.config.keys_bg_shape) bgShapeEl.value = state.config.keys_bg_shape;
+
+    const bgLayerEl = document.getElementById('setup-bg-layer');
+    if (bgLayerEl) bgLayerEl.value = state.config.bg_layer !== undefined ? state.config.bg_layer : 6;
+
+    const trailLayerEl = document.getElementById('setup-trail-layer');
+    if (trailLayerEl) trailLayerEl.value = state.config.trail_layer !== undefined ? state.config.trail_layer : 8;
+
+    const keyLayerEl = document.getElementById('setup-key-layer');
+    if (keyLayerEl) keyLayerEl.value = state.config.key_layer !== undefined ? state.config.key_layer : 10;
 
     const trailSpeedEl = document.getElementById('setup-trail-speed');
     if (trailSpeedEl && state.config.trail_speed !== undefined) trailSpeedEl.value = state.config.trail_speed;
@@ -228,6 +343,6 @@ export function populateSettingsPanel() {
     }
 }
 
-export async function saveVisualSettings() {
-    await invoke('save_config', { config: state.config });
+export async function saveVisualSettings(options = {}) {
+    await saveConfig({ reason: 'visual-settings', ...options });
 }

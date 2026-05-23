@@ -1,6 +1,6 @@
 [package]
 name = "oris-mania-utils"
-version = "0.2.1"
+version = "0.3.0"
 description = "ori's mania utils - skill ratings overlay for osu!mania"
 authors = ["ori's mania utils"]
 edition = "2021"
@@ -25,6 +25,9 @@ futures-util = "0.3"
 tokio = { version = "1", features = ["full"] }
 rdev = "0.5.3"
 lazy_static = "1.5.0"
+include_dir = "0.7"
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+semver = "1"
 
 [profile.release.package.minacalc-sys]
 opt-level = 1

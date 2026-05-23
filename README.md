@@ -52,35 +52,30 @@ graph TD
 
 ## Setup & Integration
 
-### 1. Extract Files to Tosu
-Download the latest zipped release and extract the folders directly into your Tosu installation's `static/` directory:
-```text
-tosu/
-└── static/
-    ├── msdconverter/     <-- Houses oris-mania-utils.exe (Manager)
-    ├── ManiaKeystrokes/
-    └── HitCounter/
-```
+### 1. Run the Manager
+Download the latest release zip, extract it anywhere, and run `oris-mania-utils.exe`.
 
-### 2. Configure the Manager Utility
-1. Run **`oris-mania-utils.exe`** inside `static/msdconverter/`.
-2. Enter or pick the path to your **osu! Songs directory** and click **Save**.
-3. You can minimize the manager utility to the background. It will automatically listen to map changes and output difficulty data.
+The app will auto-detect:
+* your TOSU folder
+* your `osu! Songs` folder
+* whether the overlays need to be copied into `tosu/static/`
 
-### 3. Displaying Overlays In-Game
-1. Open your web browser to [http://127.0.0.1:24050/settings](http://127.0.0.1:24050/settings) and verify that **In-Game Overlay** is toggled **ON**.
-2. Launch osu!. Press the default Tosu overlay key combination (**Ctrl + Shift + Space**).
-3. Right-click on the screen, click **Add Overlay**, and select the three overlays:
-   *   `msdconverter`
-   *   `ManiaKeystrokes`
-   *   `HitCounter`
-4. Position and size the boxes as preferred, and exit the menu.
+If detection misses something, pick the folder once in the manager and it will remember it.
 
-### 4. OBS Studio Settings (Streaming)
-Add the overlays as **Browser Sources** in OBS (do NOT select "Local file"):
-*   **MSD Chart**: `http://localhost:24050/msdconverter/` (350x220)
-*   **Keystrokes**: `http://localhost:24050/ManiaKeystrokes/` (270x400)
-*   **Hit Counter**: `http://localhost:24050/HitCounter/` (240x180)
+### 2. Enable TOSU Overlay Mode
+Open [http://127.0.0.1:24050/settings](http://127.0.0.1:24050/settings) and make sure **In-Game Overlay** is turned **ON**.
+
+### 3. Add the Overlays
+Launch osu!, open Tosu's in-game menu, and add these overlays:
+* `msdconverter`
+* `ManiaKeystrokes`
+* `HitCounter`
+
+### 4. OBS Studio
+Add the overlays as **Browser Sources** in OBS:
+* **MSD Chart**: `http://localhost:24050/msdconverter/` (350x220)
+* **Keystrokes**: `http://localhost:24050/ManiaKeystrokes/` (270x400)
+* **Hit Counter**: `http://localhost:24050/HitCounter/` (240x180)
 
 ---
 
@@ -111,8 +106,17 @@ npm install
 # Run the Tauri application in developer mode
 npm run tauri dev
 
-# Build the production release binary
-npm run tauri build
+# Validate code + config pipeline
+npm run check
+
+# Build the stable desktop artifacts (exe + msi)
+npm run build:desktop
+
+# Verify overlay/build integrity
+npm run smoke
+
+# Produce release-ready zip + copy latest MSI to /dist
+npm run release:prep
 ```
 
 ---
@@ -120,3 +124,5 @@ npm run tauri build
 ## Development Lifecycle
 
 Detailed changes are tracked in the [CHANGELOG.md](./CHANGELOG.md). Contributions, bug reports, and suggestions are welcome via GitHub issues.
+
+For release validation, use the repo checklist in [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md).

@@ -6,6 +6,7 @@ use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 
 use crate::config::read_config;
 use crate::calc::{calculate_map_internal, rebuild_songs_index};
+use crate::bootstrap::is_valid_tosu_root;
 
 #[derive(serde::Deserialize)]
 struct TosuPath {
@@ -56,12 +57,19 @@ struct TosuPayload {
 pub static TOSU_CONNECTED: AtomicBool = AtomicBool::new(false);
 
 pub fn get_overlay_path() -> PathBuf {
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(dir) = exe_path.parent() {
-            return dir.to_path_buf();
+    let config = read_config();
+    if !config.tosu_root_path.is_empty() {
+        let root = PathBuf::from(&config.tosu_root_path);
+        if is_valid_tosu_root(&root) {
+            return root.join("static").join("msdconverter");
         }
     }
-    PathBuf::from(".")
+
+    dirs_next::data_local_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("oris-mania-utils")
+        .join("runtime-preview")
+        .join("msdconverter")
 }
 
 pub async fn start_tosu_proxy(app: tauri::AppHandle) {

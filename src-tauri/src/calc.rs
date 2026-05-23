@@ -21,6 +21,7 @@ pub struct SkillRatings {
 lazy_static::lazy_static! {
     static ref CALC_CACHE: Mutex<HashMap<String, SkillRatings>> = Mutex::new(HashMap::new());
     static ref SONGS_INDEX: RwLock<HashMap<String, PathBuf>> = RwLock::new(HashMap::new());
+    static ref INDEXED_SONGS_PATH: RwLock<String> = RwLock::new(String::new());
 }
 
 pub fn rebuild_songs_index(songs_path: &str) {
@@ -28,6 +29,13 @@ pub fn rebuild_songs_index(songs_path: &str) {
     if !songs_dir.is_dir() {
         return;
     }
+
+    if let Ok(indexed_path) = INDEXED_SONGS_PATH.read() {
+        if indexed_path.as_str() == songs_path {
+            return;
+        }
+    }
+
     let mut index = match SONGS_INDEX.write() {
         Ok(g) => g,
         Err(_) => return,
@@ -38,6 +46,9 @@ pub fn rebuild_songs_index(songs_path: &str) {
             let name = entry.file_name().to_string_lossy().trim().to_string();
             index.insert(name.to_lowercase(), entry.path());
         }
+    }
+    if let Ok(mut indexed_path) = INDEXED_SONGS_PATH.write() {
+        *indexed_path = songs_path.to_string();
     }
 }
 
@@ -102,7 +113,11 @@ pub fn find_osu_file(songs_path: &str, folder_or_id: &str, file: &str) -> Option
             if name_str.trim().starts_with(folder_trimmed)
                 || name_str.trim() == folder_trimmed
             {
-                if let Some(p) = find_in_dir(&entry.path()) {
+                let entry_path = entry.path();
+                if let Some(p) = find_in_dir(&entry_path) {
+                    if let Ok(mut index) = SONGS_INDEX.write() {
+                        index.insert(name_str.trim().to_lowercase(), entry_path);
+                    }
                     return Some(p);
                 }
             }

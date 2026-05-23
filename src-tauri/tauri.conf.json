@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ori's mania utils",
-  "version": "0.2.1",
-  "identifier": "com.orismaniautils.app",
+  "version": "0.3.0",
+  "identifier": "com.orismaniautils.desktop",
   "build": {
     "frontendDist": "../src"
   },
@@ -12,8 +12,10 @@
       {
         "label": "main",
         "title": "ori's mania utils",
-        "width": 600,
-        "height": 450,
+        "width": 1280,
+        "height": 900,
+        "minWidth": 1080,
+        "minHeight": 760,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": false,
@@ -27,8 +29,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "resources": [],
+    "targets": "msi",
+    "resources": [
+      "../overlays/"
+    ],
     "icon": [
 
       "icons/32x32.png",

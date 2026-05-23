@@ -2,13 +2,13 @@ const SKILL_KEYS = ['stream', 'jumpstream', 'handstream', 'stamina', 'jackspeed'
 const SKILL_LABELS = ['Stream', 'JS', 'HS', 'Stam', 'Jack', 'CJ', 'Tech'];
 
 const SKILL_COLORS = {
-    stream:     '#e07a5f',
-    jumpstream: '#3d405b',
-    handstream: '#81b29a',
-    stamina:    '#f2cc8f',
-    jackspeed:  '#a67c52',
-    chordjack:  '#d4a373',
-    technical:  '#e9d8a6',
+    stream:     '#ff8ab3',
+    jumpstream: '#8d6ad6',
+    handstream: '#ffb2d8',
+    stamina:    '#ffc8a8',
+    jackspeed:  '#d96d98',
+    chordjack:  '#ff9fc1',
+    technical:  '#f3b7e4',
 };
 
 let chartCanvas = null;

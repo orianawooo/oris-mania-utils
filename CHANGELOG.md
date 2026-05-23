@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-05-23 - Standalone Manager, Update Flow & Stability Pass
+### Added
+- Added a real standalone manager flow: the app can bootstrap from outside `tosu/static/msdconverter`, detect TOSU, and install selected overlays directly into `tosu/static/`.
+- Added GitHub release checks plus one-click app/overlay update actions inside the manager.
+- Added shared geometry/layout modules for `ManiaKeystrokes` and `HitCounter` so preview and runtime stop drifting apart.
+- Added release tooling and smoke checks for the MSI + portable ZIP flow.
+
+### Changed
+- Consolidated defaults, persisted config handling, and config versioning so the manager, editors, and runtime overlays stop fighting each other.
+- Reworked the release path around the embedded overlay resources and a single `build -> smoke -> zip` flow.
+- Tightened overlay install/update status reporting in the manager UI so missing or outdated overlays are obvious before editing.
+
+### Fixed
+- Fixed the old requirement of launching the app from inside the `msdconverter` folder just to make config and overlay actions work.
+- Fixed live update wiring so `msdconverter`, `HitCounter`, and `ManiaKeystrokes` all react to config changes through the same runtime channel again.
+- Fixed preview/runtime mismatch in keystrokes and hit counter by sharing the same layout math instead of duplicating it in multiple places.
+- Fixed a bunch of wasted work in config saves, overlay redraws, and Songs reindexing that was adding unnecessary overhead during normal use.
+
 ## [0.2.1] - 2026-05-21 - Emergency Editor Hotfixes
 ### Fixed
 - Fixed ReferenceError crash by defining isTauri and invoke in editor.js.

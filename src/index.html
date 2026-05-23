@@ -7,15 +7,15 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="setup-screen" class="setup-screen hidden">
+    <div id="setup-screen" class="setup-screen">
         <div class="window-controls">
             <button id="min-btn" class="control-btn">&minus;</button>
             <button id="max-btn" class="control-btn">&#9633;</button>
             <button id="close-btn" class="control-btn close">&times;</button>
         </div>
         <div class="setup-card">
-            <div class="header-minimal">
-                <h1>ori's mania utils <span class="version">v0.2.1</span></h1>
+            <div class="header-minimal" data-tauri-drag-region>
+                <h1>ori's mania utils <span class="version">v0.3.0</span></h1>
                 <div class="header-actions" style="display: flex; gap: 8px;">
                     <button id="theme-toggle-btn" class="btn-secondary">Dark Mode</button>
                     <button id="setup-guide-btn" class="btn-secondary">Setup Guide</button>
@@ -24,13 +24,13 @@
 
             <div class="tabs-nav">
                 <button class="tab-btn active" data-tab="msd">MSD Converter</button>
-                <button class="tab-btn" data-tab="hits">Hit Counter</button>
-                <button class="tab-btn" data-tab="keys">Keystrokes</button>
+                <button class="tab-btn" data-tab="hits" data-required-overlay="HitCounter">Hit Counter</button>
+                <button class="tab-btn" data-tab="keys" data-required-overlay="ManiaKeystrokes">Keystrokes</button>
             </div>
 
             <div id="setup-main-content">
                 <div id="msd-tab" class="tab-pane active">
-                    <p class="setup-desc">Configure your MSD Converter settings here.</p>
+                    <p class="setup-desc">The manager auto-detects TOSU and your osu! Songs folder on launch. If anything is missing, pick it once and it will be remembered.</p>
                     
                     <div class="input-group">
                         <label for="songs-path-input">Songs folder path:</label>
@@ -41,7 +41,102 @@
                         <span id="path-validation-msg" class="validation-msg">Valid osu! Songs folder</span>
                     </div>
 
-                    <fieldset class="settings-group">
+                    <div class="input-group">
+                        <label for="tosu-path-input">TOSU folder path:</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="tosu-path-input" placeholder="Auto-detected on launch...">
+                            <button id="detect-tosu-btn" class="btn-secondary">Detect</button>
+                            <button id="browse-tosu-btn" class="btn-secondary">Browse</button>
+                        </div>
+                        <span id="tosu-validation-msg" class="validation-msg">Auto-detecting TOSU...</span>
+                    </div>
+
+                    <fieldset class="settings-group installer-group">
+                        <legend>Overlay Installer</legend>
+                        <p class="installer-copy">Run the manager from anywhere, choose the overlays you want, and install them directly into <code>tosu/static/</code>. The app will detect TOSU when possible and show live progress while files are copied.</p>
+
+                        <div class="overlay-selection-list">
+                            <label class="overlay-choice-card">
+                                <input type="checkbox" class="overlay-choice-input" data-overlay-name="msdconverter" checked>
+                                <div class="overlay-choice-body">
+                                    <strong>MSD Converter</strong>
+                                    <span>MSD radar manager and main overlay.</span>
+                                </div>
+                                <span id="overlay-status-msdconverter" class="overlay-choice-status pending">Pending</span>
+                            </label>
+
+                            <label class="overlay-choice-card">
+                                <input type="checkbox" class="overlay-choice-input" data-overlay-name="ManiaKeystrokes" checked>
+                                <div class="overlay-choice-body">
+                                    <strong>Mania Keystrokes</strong>
+                                    <span>Key presses, trails, particles, and live layout.</span>
+                                </div>
+                                <span id="overlay-status-ManiaKeystrokes" class="overlay-choice-status pending">Pending</span>
+                            </label>
+
+                            <label class="overlay-choice-card">
+                                <input type="checkbox" class="overlay-choice-input" data-overlay-name="HitCounter" checked>
+                                <div class="overlay-choice-body">
+                                    <strong>Hit Counter</strong>
+                                    <span>Judgment overlay with editable layout and style.</span>
+                                </div>
+                                <span id="overlay-status-HitCounter" class="overlay-choice-status pending">Pending</span>
+                            </label>
+                        </div>
+
+                        <div class="overlay-install-actions">
+                            <button id="install-selected-overlays-btn" class="btn-primary">Install Selected Overlays</button>
+                            <button id="refresh-overlay-status-btn" class="btn-secondary">Refresh Status</button>
+                        </div>
+
+                        <div class="overlay-progress-shell" aria-live="polite">
+                            <div class="overlay-progress-bar">
+                                <div id="overlay-progress-fill" class="overlay-progress-fill"></div>
+                            </div>
+                            <div class="overlay-progress-meta">
+                                <span id="overlay-progress-label">Waiting to install overlays.</span>
+                                <span id="overlay-progress-count">0 / 0</span>
+                            </div>
+                        </div>
+
+                        <div class="update-shell" aria-live="polite">
+                            <div class="update-summary-grid">
+                                <div class="update-stat-card">
+                                    <span class="update-stat-label">App Version</span>
+                                    <strong id="update-current-version">v0.3.0</strong>
+                                    <span id="update-app-status-copy" class="update-stat-copy">Checking GitHub releases...</span>
+                                </div>
+                                <div class="update-stat-card">
+                                    <span class="update-stat-label">Latest Release</span>
+                                    <strong id="update-latest-version">Unknown</strong>
+                                    <span id="update-release-date" class="update-stat-copy">Run a check to fetch the latest release.</span>
+                                </div>
+                                <div class="update-stat-card">
+                                    <span class="update-stat-label">Installed Overlays</span>
+                                    <strong id="update-overlay-version">Unknown</strong>
+                                    <span id="update-overlay-status-copy" class="update-stat-copy">Install overlays into tosu/static to track their version.</span>
+                                </div>
+                            </div>
+
+                            <div class="overlay-install-actions">
+                                <button id="check-updates-btn" class="btn-secondary">Check Updates</button>
+                                <button id="update-app-btn" class="btn-primary" disabled>Update App</button>
+                                <button id="update-overlays-btn" class="btn-secondary" disabled>Update Installed Overlays</button>
+                            </div>
+
+                            <div class="overlay-progress-shell update-progress-shell">
+                                <div class="overlay-progress-bar">
+                                    <div id="update-progress-fill" class="overlay-progress-fill"></div>
+                                </div>
+                                <div class="overlay-progress-meta">
+                                    <span id="update-progress-label">Waiting to check for updates.</span>
+                                    <span id="update-progress-count">0 / 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="settings-group overlay-display-group">
                         <legend>Overlay Display</legend>
                         
                         <div class="input-group">
@@ -69,13 +164,13 @@
                         <div class="input-group vertical">
                             <label>Visible Categories:</label>
                             <div class="checkbox-grid">
-                                <button class="pill-btn active" id="btn-stream">Stream</button>
-                                <button class="pill-btn active" id="btn-jumpstream">JS</button>
-                                <button class="pill-btn active" id="btn-handstream">HS</button>
-                                <button class="pill-btn active" id="btn-stamina">Stam</button>
-                                <button class="pill-btn active" id="btn-jackspeed">Jack</button>
-                                <button class="pill-btn active" id="btn-chordjack">CJ</button>
-                                <button class="pill-btn active" id="btn-technical">Tech</button>
+                                <button type="button" class="pill-btn active" id="btn-stream">Stream</button>
+                                <button type="button" class="pill-btn active" id="btn-jumpstream">JS</button>
+                                <button type="button" class="pill-btn active" id="btn-handstream">HS</button>
+                                <button type="button" class="pill-btn active" id="btn-stamina">Stam</button>
+                                <button type="button" class="pill-btn active" id="btn-jackspeed">Jack</button>
+                                <button type="button" class="pill-btn active" id="btn-chordjack">CJ</button>
+                                <button type="button" class="pill-btn active" id="btn-technical">Tech</button>
                             </div>
                         </div>
                     </fieldset>
@@ -85,63 +180,248 @@
                             <span>TOSU:</span> <span id="tosu-status-val" class="status-pill ok">Connected</span>
                         </div>
                         <div class="status-item">
-                            <span>Path:</span> <span id="path-status-val" class="status-pill ok">Valid</span>
+                            <span>Songs:</span> <span id="path-status-val" class="status-pill ok">Valid</span>
                         </div>
                     </div>
 
                     <div class="setup-actions">
-                        <button id="download-tosu-btn" class="btn-primary">Download tosu</button>
+                        <button id="download-tosu-btn" class="btn-primary">Download TOSU</button>
                         <button id="retry-btn" class="btn-secondary">Check tosu</button>
                         <button id="save-config-btn" class="btn-primary">Save</button>
                     </div>
                 </div>
 
                 <div id="hits-tab" class="tab-pane">
-                    <p class="setup-desc">Configure your Hit Counter overlay here.</p>
-                    
-                    <fieldset class="settings-group">
-                        <legend>Layout & Opacity</legend>
-                        <div class="input-group">
-                            <label>Background Opacity:</label>
-                            <div class="control-wrap">
-                                <input type="range" id="setup-hit-opacity" min="0" max="1" step="0.05" value="0.85">
+                    <p class="setup-desc">Use a vertical stack or horizontal row, then drag each card, label, value, and dot directly in the preview.</p>
+                    <div class="hit-editor-shell">
+                        <div class="hit-editor-preview-card">
+                            <div class="hit-editor-toolbar">
+                                <button type="button" class="btn-icon" id="hit-stack-vertical-btn">Stack Vertical</button>
+                                <button type="button" class="btn-icon" id="hit-stack-horizontal-btn">Stack Horizontal</button>
+                                <button type="button" class="btn-icon" id="hit-auto-arrange-btn">Auto Arrange</button>
+                                <button type="button" class="btn-icon" id="hit-reset-all-btn">Reset All</button>
+                                <button type="button" class="btn-icon" id="hit-reset-selected-btn">Reset Selected</button>
+                                <span class="hit-grid-note" id="hit-grid-size-readout">8px snap</span>
+                            </div>
+                            <div class="hit-editor-workspace" id="hit-editor-workspace">
+                                <div id="hit-editor-preview" class="hit-editor-preview hit-counter">
+                                    <div class="judgment-item hit-preview-item max" data-hit-index="0">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">MAX</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">320</span>
+                                    </div>
+                                    <div class="judgment-item hit-preview-item perf" data-hit-index="1">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">PERF</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">300</span>
+                                    </div>
+                                    <div class="judgment-item hit-preview-item great" data-hit-index="2">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">GREAT</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">200</span>
+                                    </div>
+                                    <div class="judgment-item hit-preview-item good" data-hit-index="3">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">GOOD</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">100</span>
+                                    </div>
+                                    <div class="judgment-item hit-preview-item bad" data-hit-index="4">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">BAD</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">50</span>
+                                    </div>
+                                    <div class="judgment-item hit-preview-item miss" data-hit-index="5">
+                                        <div class="j-header">
+                                            <span class="j-dot hit-part hc-dot" data-hit-part="dot"></span>
+                                            <span class="j-label hit-part hc-label" data-hit-part="label">MISS</span>
+                                        </div>
+                                        <span class="j-val hit-part hc-value" data-hit-part="value">0</span>
+                                    </div>
+                                </div>
+                                <div id="hit-editor-tooltip" class="editor-tooltip"></div>
                             </div>
                         </div>
 
-                        <div class="input-group">
-                            <label>Scale:</label>
-                            <div class="control-wrap">
-                                <input type="range" id="setup-hit-scale" min="0.5" max="1.5" step="0.05" value="1">
-                            </div>
-                        </div>
+                        <div class="hit-editor-properties">
+                            <fieldset class="settings-group">
+                                <legend>Layout</legend>
+                                <div class="input-row">
+                                    <label>Flow:</label>
+                                    <select id="setup-hit-orientation" class="custom-select">
+                                        <option value="vertical">Vertical Stack</option>
+                                        <option value="horizontal">Horizontal Row</option>
+                                    </select>
+                                </div>
+                                <div class="input-row">
+                                    <label>Background Opacity:</label>
+                                    <input type="range" id="setup-hit-opacity" min="0" max="1" step="0.05" value="0.82">
+                                </div>
+                                <div class="input-row">
+                                    <label>Scale:</label>
+                                    <input type="range" id="setup-hit-scale" min="0.4" max="2.2" step="0.05" value="1">
+                                </div>
+                                <div class="input-row">
+                                    <label>Background Color:</label>
+                                    <input type="color" id="setup-hit-bg-color" value="#0f1320">
+                                </div>
+                                <div class="input-row">
+                                    <label>Label Color:</label>
+                                    <input type="color" id="setup-hit-text-color" value="#8b8ba8">
+                                </div>
+                                <div class="input-row">
+                                    <label>Font:</label>
+                                    <select id="setup-hit-font" class="custom-select">
+                                        <option value="Inter" selected>Inter</option>
+                                        <option value="Outfit">Outfit</option>
+                                        <option value="Nunito">Nunito</option>
+                                        <option value="Quicksand">Quicksand</option>
+                                        <option value="Urbanist">Urbanist</option>
+                                        <option value="Baloo 2">Baloo 2</option>
+                                    </select>
+                                </div>
+                                <div class="input-row">
+                                    <label>Container X:</label>
+                                    <input type="number" id="setup-hit-pos-x" value="0" class="ctx-input" style="width:80px;">
+                                </div>
+                                <div class="input-row">
+                                    <label>Container Y:</label>
+                                    <input type="number" id="setup-hit-pos-y" value="0" class="ctx-input" style="width:80px;">
+                                </div>
+                                <div class="section-actions">
+                                    <button type="button" class="section-reset-btn" id="hit-reset-layout-btn">Reset Layout Defaults</button>
+                                </div>
+                            </fieldset>
 
-                        <div class="input-group">
-                            <label>Background Color:</label>
-                            <input type="color" id="setup-hit-bg-color" value="#000000">
-                        </div>
+                            <fieldset class="settings-group">
+                                <legend>Card Style</legend>
+                                <div class="input-row">
+                                    <label>Padding:</label>
+                                    <input type="range" id="setup-hit-padding" min="0" max="40" step="1" value="10">
+                                    <span id="val-hit-padding">10</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Gap:</label>
+                                    <input type="range" id="setup-hit-gap" min="0" max="32" step="1" value="8">
+                                    <span id="val-hit-gap">8</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Card Width:</label>
+                                    <input type="range" id="setup-hit-item-width" min="72" max="180" step="2" value="118">
+                                    <span id="val-hit-item-width">118</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Card Height:</label>
+                                    <input type="range" id="setup-hit-item-height" min="52" max="140" step="2" value="62">
+                                    <span id="val-hit-item-height">62</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Corner Radius:</label>
+                                    <input type="range" id="setup-hit-radius" min="0" max="32" step="1" value="10">
+                                    <span id="val-hit-radius">10</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Border Style:</label>
+                                    <select id="setup-hit-border-style" class="custom-select">
+                                        <option value="none">None</option>
+                                        <option value="solid" selected>Solid</option>
+                                        <option value="dashed">Dashed</option>
+                                    </select>
+                                </div>
+                                <div class="input-row">
+                                    <label>Border Color:</label>
+                                    <input type="color" id="setup-hit-border-color" value="#262f47">
+                                </div>
+                                <div class="input-row">
+                                    <label>Dot Size:</label>
+                                    <input type="range" id="setup-hit-dot-size" min="4" max="24" step="1" value="6">
+                                    <span id="val-hit-dot-size">6</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Label Size:</label>
+                                    <input type="range" id="setup-hit-label-size" min="9" max="24" step="1" value="10">
+                                    <span id="val-hit-label-size">10</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Value Size:</label>
+                                    <input type="range" id="setup-hit-value-size" min="14" max="42" step="1" value="22">
+                                    <span id="val-hit-value-size">22</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Glow Strength:</label>
+                                    <input type="range" id="setup-hit-glow" min="0" max="1" step="0.05" value="0.12">
+                                    <span id="val-hit-glow">0.12</span>
+                                </div>
+                                <div class="section-actions">
+                                    <button type="button" class="section-reset-btn" id="hit-reset-style-btn">Reset Card Defaults</button>
+                                </div>
+                            </fieldset>
 
-                        <div class="input-group">
-                            <label>Label Color:</label>
-                            <input type="color" id="setup-hit-text-color" value="#ffffff">
+                            <fieldset class="settings-group">
+                                <legend>Selected Card</legend>
+                                <div class="input-row">
+                                    <label>Selected:</label>
+                                    <span id="hit-selected-name">MAX</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Label Text:</label>
+                                    <input type="text" id="setup-hit-label-text" class="ctx-input" value="MAX">
+                                </div>
+                                <div class="input-row">
+                                    <label>Accent Color:</label>
+                                    <input type="color" id="setup-hit-item-color" value="#ffffff">
+                                </div>
+                                <div class="input-row">
+                                    <label>Card Scale:</label>
+                                    <input type="number" id="setup-hit-item-scale" class="ctx-input" style="width:80px;" min="0.2" max="3" step="0.05" value="1">
+                                </div>
+                                <div class="input-row">
+                                    <label>Card X:</label>
+                                    <input type="number" id="setup-hit-item-x" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Card Y:</label>
+                                    <input type="number" id="setup-hit-item-y" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Label X:</label>
+                                    <input type="number" id="setup-hit-label-x" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Label Y:</label>
+                                    <input type="number" id="setup-hit-label-y" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Value X:</label>
+                                    <input type="number" id="setup-hit-value-x" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Value Y:</label>
+                                    <input type="number" id="setup-hit-value-y" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Dot X:</label>
+                                    <input type="number" id="setup-hit-dot-x" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Dot Y:</label>
+                                    <input type="number" id="setup-hit-dot-y" class="ctx-input" style="width:80px;" value="0">
+                                </div>
+                                <div class="section-actions">
+                                    <button type="button" class="section-reset-btn" id="hit-reset-selected-inline-btn">Reset Selected Card</button>
+                                </div>
+                            </fieldset>
                         </div>
-
-                        <div class="input-group">
-                            <label>Border Style:</label>
-                            <select id="setup-hit-border-style" class="custom-select">
-                                <option value="none" selected>None</option>
-                                <option value="solid">Solid</option>
-                                <option value="dashed">Dashed</option>
-                            </select>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Orientation:</label>
-                            <select id="setup-hit-orientation" class="custom-select">
-                                <option value="vertical">Vertical</option>
-                                <option value="horizontal">Horizontal</option>
-                            </select>
-                        </div>
-                    </fieldset>
+                    </div>
                 </div>
 
                 <div id="keys-tab" class="tab-pane">
@@ -173,6 +453,7 @@
                         <div class="prop-tabs">
                             <button class="prop-tab active" data-panel="panel-global">Global</button>
                             <button class="prop-tab" data-panel="panel-trails">Trails</button>
+                            <button class="prop-tab" data-panel="panel-frame">Background</button>
                             <button class="prop-tab" data-panel="panel-colors">Key Colors</button>
                         </div>
 
@@ -204,7 +485,7 @@
                                 </div>
                                 <div class="input-row">
                                     <label>BG Color:</label>
-                                    <input type="color" id="setup-bg-color" value="#0a0a12">
+                                    <input type="color" id="setup-bg-color" value="#2b1730">
                                 </div>
                             </fieldset>
                         </div>
@@ -245,6 +526,132 @@
                                 <div class="input-row">
                                     <label>Enable:</label>
                                     <input type="checkbox" id="setup-particles" checked>
+                                </div>
+                                <div class="input-row">
+                                    <label>Burst Count:</label>
+                                    <input type="range" id="setup-particle-count" min="1" max="24" step="1" value="8">
+                                    <span id="val-particle-count">8</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Size:</label>
+                                    <input type="range" id="setup-particle-size" min="1" max="8" step="1" value="3">
+                                    <span id="val-particle-size">3</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Min Size:</label>
+                                    <input type="range" id="setup-particle-min-size" min="1" max="8" step="1" value="1">
+                                    <span id="val-particle-min-size">1</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Spread:</label>
+                                    <input type="range" id="setup-particle-spread" min="0" max="20" step="1" value="6">
+                                    <span id="val-particle-spread">6</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Life:</label>
+                                    <input type="range" id="setup-particle-life" min="0.3" max="2.5" step="0.1" value="1">
+                                    <span id="val-particle-life">1.0</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Gravity:</label>
+                                    <input type="range" id="setup-particle-gravity" min="0" max="1" step="0.05" value="0.2">
+                                    <span id="val-particle-gravity">0.20</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Speed:</label>
+                                    <input type="range" id="setup-particle-speed" min="1" max="20" step="0.5" value="8">
+                                    <span id="val-particle-speed">8.0</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Rainbow:</label>
+                                    <input type="checkbox" id="setup-particle-rgb">
+                                </div>
+                                <div class="input-row">
+                                    <label>Shape:</label>
+                                    <select id="setup-particle-shape" class="custom-select">
+                                        <option value="square" selected>Square</option>
+                                        <option value="circle">Circle</option>
+                                    </select>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <div id="panel-frame" class="prop-panel">
+                            <p style="font-size:0.8rem; color: #888; margin-bottom:8px;">Drag the background frame directly in the preview, or fine-tune the box here.</p>
+                            <fieldset class="settings-group">
+                                <legend>Frame</legend>
+                                <div class="input-row">
+                                    <label>Enable:</label>
+                                    <input type="checkbox" id="setup-bg-enabled" checked>
+                                </div>
+                                <div class="input-row">
+                                    <label>X Offset:</label>
+                                    <input type="range" id="setup-bg-offset-x" min="-240" max="240" step="1" value="0">
+                                    <span id="val-bg-offset-x">0</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Y Offset:</label>
+                                    <input type="range" id="setup-bg-offset-y" min="-240" max="240" step="1" value="0">
+                                    <span id="val-bg-offset-y">0</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Width:</label>
+                                    <input type="number" id="setup-bg-width" value="0" min="0" style="width:80px;">
+                                    <span style="min-width:auto;">0 = auto</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Height:</label>
+                                    <input type="number" id="setup-bg-height" value="0" min="0" style="width:80px;">
+                                    <span style="min-width:auto;">0 = auto</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Padding:</label>
+                                    <input type="range" id="setup-bg-padding" min="0" max="40" step="1" value="15">
+                                    <span id="val-bg-padding">15</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Scale:</label>
+                                    <input type="range" id="setup-bg-scale" min="0.5" max="2.5" step="0.05" value="1">
+                                    <span id="val-bg-scale">1.00</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Rotation:</label>
+                                    <input type="range" id="setup-bg-rotation" min="-180" max="180" step="1" value="0">
+                                    <span id="val-bg-rotation">0</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Shape:</label>
+                                    <select id="setup-bg-shape" class="custom-select">
+                                        <option value="rounded">Rounded</option>
+                                        <option value="pill">Pill</option>
+                                        <option value="circle">Circle</option>
+                                        <option value="square">Square</option>
+                                        <option value="diamond">Diamond</option>
+                                        <option value="hex">Hex</option>
+                                    </select>
+                                </div>
+                                <div class="input-row">
+                                    <label>BG Layer:</label>
+                                    <input type="number" id="setup-bg-layer" value="6" min="0" max="40" style="width:80px;">
+                                    <span style="min-width:auto;">higher = on top</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Trail Layer:</label>
+                                    <input type="number" id="setup-trail-layer" value="8" min="0" max="40" style="width:80px;">
+                                    <span style="min-width:auto;">higher = on top</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Key Layer:</label>
+                                    <input type="number" id="setup-key-layer" value="10" min="0" max="40" style="width:80px;">
+                                    <span style="min-width:auto;">higher = on top</span>
+                                </div>
+                                <div class="input-row">
+                                    <label>Radius:</label>
+                                    <input type="range" id="setup-bg-radius" min="0" max="40" step="1" value="16">
+                                    <span id="val-bg-radius">16</span>
+                                </div>
+                                <div class="input-row">
+                                    <button type="button" class="btn-secondary" id="setup-bg-reset-btn">Fit to content</button>
                                 </div>
                             </fieldset>
                         </div>
@@ -295,14 +702,33 @@
                                 <input type="number" id="ctx-width" class="ctx-input" style="width:60px;">
                             </div>
                             <div class="ctx-row">
+                                <label>Scale:</label>
+                                <input type="number" id="ctx-scale" class="ctx-input" style="width:60px;" min="0.1" max="4" step="0.05">
+                            </div>
+                            <div class="ctx-row">
+                                <label>Rotation:</label>
+                                <input type="number" id="ctx-rotation" class="ctx-input" style="width:60px;" min="-180" max="180" step="1">
+                            </div>
+                            <div class="ctx-row">
+                                <label>Shape:</label>
+                                <select id="ctx-shape" class="ctx-input">
+                                    <option value="rounded">Rounded</option>
+                                    <option value="pill">Pill</option>
+                                    <option value="circle">Circle</option>
+                                    <option value="square">Square</option>
+                                    <option value="diamond">Diamond</option>
+                                    <option value="hex">Hex</option>
+                                </select>
+                            </div>
+                            <div class="ctx-row">
                                 <label>RGB mode:</label>
                                 <input type="checkbox" id="ctx-rgb">
                             </div>
-                            <div class="ctx-row" style="margin-top: 6px; border-top: 1px dashed rgba(166,124,82,0.2); padding-top: 6px;">
-                                <label style="font-size: 0.75rem; color: #a67c52;">Apply to all:</label>
+                            <div class="ctx-row" style="margin-top: 6px; border-top: 1px dashed rgba(255,143,192,0.22); padding-top: 6px;">
+                                <label style="font-size: 0.75rem; color: #d96d98;">Apply to all:</label>
                                 <input type="checkbox" id="ctx-apply-all">
                             </div>
-                            <div id="ctx-scope-indicator" style="font-size: 0.7rem; color: #a67c52; text-align: center; margin-top: 4px; font-style: italic;">
+                            <div id="ctx-scope-indicator" style="font-size: 0.7rem; color: #d96d98; text-align: center; margin-top: 4px; font-style: italic;">
                                 Configuring specific key
                             </div>
                             <button id="ctx-reset" class="btn-secondary btn-reset" style="margin-top:8px; width:100%;">Reset Offset</button>
@@ -372,47 +798,47 @@
         </div>
         
         <div class="judgments-grid">
-            <div class="judgment-item max">
+            <div class="judgment-item max" data-hit-index="0">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">MAX</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">MAX</span>
                 </div>
-                <span id="val-max" class="j-val">0</span>
+                <span id="val-max" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
-            <div class="judgment-item perf">
+            <div class="judgment-item perf" data-hit-index="1">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">PERF</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">PERF</span>
                 </div>
-                <span id="val-perf" class="j-val">0</span>
+                <span id="val-perf" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
-            <div class="judgment-item great">
+            <div class="judgment-item great" data-hit-index="2">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">GREAT</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">GREAT</span>
                 </div>
-                <span id="val-great" class="j-val">0</span>
+                <span id="val-great" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
-            <div class="judgment-item good">
+            <div class="judgment-item good" data-hit-index="3">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">GOOD</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">GOOD</span>
                 </div>
-                <span id="val-good" class="j-val">0</span>
+                <span id="val-good" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
-            <div class="judgment-item bad">
+            <div class="judgment-item bad" data-hit-index="4">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">BAD</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">BAD</span>
                 </div>
-                <span id="val-bad" class="j-val">0</span>
+                <span id="val-bad" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
-            <div class="judgment-item miss">
+            <div class="judgment-item miss" data-hit-index="5">
                 <div class="j-header">
-                    <span class="j-dot"></span>
-                    <span class="j-label">MISS</span>
+                    <span class="j-dot hit-part" data-hit-part="dot"></span>
+                    <span class="j-label hit-part" data-hit-part="label">MISS</span>
                 </div>
-                <span id="val-miss" class="j-val">0</span>
+                <span id="val-miss" class="j-val hit-part" data-hit-part="value">0</span>
             </div>
         </div>
         <div id="debug-bar" class="debug-bar hidden">
@@ -425,30 +851,15 @@
             <div class="dashed-box instruction-card-modal">
                 <h4>Setup & Integration Guide</h4>
                 <ol>
-                    <li><strong>Installation Location</strong>:<br>
-                        Ensure the three folders (<code>msdconverter/</code>, <code>ManiaKeystrokes/</code>, and <code>HitCounter/</code>) are placed inside tosu's <code>static/</code> directory:
-                        <div class="location-tree">
-                            tosu/static/<br>
-                            ├── msdconverter/ (contains oris-mania-utils.exe)<br>
-                            ├── ManiaKeystrokes/<br>
-                            └── HitCounter/
-                        </div>
-                    </li>
-                    <li><strong>Configuration</strong>:<br>
-                        Set your <strong>osu! Songs folder</strong> path in the Manager panel and click <strong>Save</strong>.
-                    </li>
-                    <li><strong>Enable Tosu In-Game Overlay</strong>:<br>
-                        Open <span class="copiable-link" data-url="http://127.0.0.1:24050/settings">http://127.0.0.1:24050/settings</span> in your browser and verify that <strong>In-Game Overlay</strong> is enabled (toggled <strong>ON</strong>).
-                    </li>
-                    <li><strong>Add Overlays inside osu!</strong>:<br>
-                        Launch osu! and make sure Tosu is running. Press the overlay toggle keybind (default: <strong>Ctrl + Shift + Space</strong> or <strong>Ctrl + Shift + ~</strong>) to open Tosu's menu. Right-click anywhere in-game and choose <strong>Add Overlay</strong> to add them one by one.
-                    </li>
-                    <li><strong>Browser / OBS Sources</strong>:<br>
-                        To capture them in OBS or open them in your browser, use these local URLs:
+                    <li><strong>One-click start</strong>: just run <code>oris-mania-utils.exe</code>. It auto-detects TOSU, installs the overlays into <code>tosu/static/</code>, and remembers the paths for next time.</li>
+                    <li><strong>Fallback setup</strong>: if auto-detect misses your TOSU or <strong>osu! Songs</strong> folder, pick them once in the manager. After that, the app keeps them saved.</li>
+                    <li><strong>Enable Tosu In-Game Overlay</strong>: open <span class="copiable-link" data-url="http://127.0.0.1:24050/settings">http://127.0.0.1:24050/settings</span> and verify that <strong>In-Game Overlay</strong> is toggled <strong>ON</strong>.</li>
+                    <li><strong>Add overlays in osu!</strong>: launch osu!, open Tosu's menu with the default keybind, and add these overlays: <code>msdconverter</code>, <code>ManiaKeystrokes</code>, and <code>HitCounter</code>.</li>
+                    <li><strong>Browser / OBS sources</strong>: if you want to use them in OBS or a browser, use these local URLs:
                         <div class="link-group">
-                            <div>• MSD Radar: <span class="copiable-link" data-url="http://localhost:24050/msdconverter/">http://localhost:24050/msdconverter/</span></div>
-                            <div>• Keystrokes: <span class="copiable-link" data-url="http://localhost:24050/ManiaKeystrokes/">http://localhost:24050/ManiaKeystrokes/</span></div>
-                            <div>• Hit Counter: <span class="copiable-link" data-url="http://localhost:24050/HitCounter/">http://localhost:24050/HitCounter/</span></div>
+                            <div>MSD Radar: <span class="copiable-link" data-url="http://localhost:24050/msdconverter/">http://localhost:24050/msdconverter/</span></div>
+                            <div>Keystrokes: <span class="copiable-link" data-url="http://localhost:24050/ManiaKeystrokes/">http://localhost:24050/ManiaKeystrokes/</span></div>
+                            <div>Hit Counter: <span class="copiable-link" data-url="http://localhost:24050/HitCounter/">http://localhost:24050/HitCounter/</span></div>
                         </div>
                         <span class="copy-note">(Click any link above to copy and open in browser)</span>
                     </li>
@@ -457,8 +868,7 @@
         </div>
     </div>
 
-    <script type="module" src="main.js?v=2"></script>
+    <script type="module" src="main.js?v=3"></script>
 
 </body>
 </html>
-
