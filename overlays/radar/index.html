@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>msd radar - ori's mania utils</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="overlay" class="overlay">
+        <div id="map-bg" class="map-bg hidden"></div>
+        <div id="header" class="header">
+            <div class="title-block">
+                <div class="song-title-row">
+                    <span id="song-title">Waiting for map</span>
+                    <span id="song-difficulty"></span>
+                </div>
+                <span id="song-artist">osu!mania 4k</span>
+            </div>
+            <span id="tosu-offline-badge" class="tosu-offline-badge"><span class="tosu-dot"></span>tosu! offline</span>
+            <span id="map-type-badge" class="map-type-badge hidden"></span>
+        </div>
+        <div id="tosu-offline-bar" class="tosu-offline-bar hidden"><span class="tosu-dot"></span>tosu! offline · open tosu</div>
+
+        <div class="metrics-panel">
+            <div id="chart-wrap" class="chart-wrap">
+                <canvas id="radar-chart" width="148" height="148"></canvas>
+            </div>
+            <div class="skill-list">
+                <div class="skill-row overall-row">
+                    <span class="skill-label">overall</span>
+                    <span id="val-overall" class="skill-val overall-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="stream">
+                    <span class="skill-label">stream</span>
+                    <span id="val-stream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="jumpstream">
+                    <span class="skill-label">jumpstream</span>
+                    <span id="val-jumpstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="handstream">
+                    <span class="skill-label">handstream</span>
+                    <span id="val-handstream" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="stamina">
+                    <span class="skill-label">stamina</span>
+                    <span id="val-stamina" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="jackspeed">
+                    <span class="skill-label">jackspeed</span>
+                    <span id="val-jackspeed" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="chordjack">
+                    <span class="skill-label">chordjack</span>
+                    <span id="val-chordjack" class="skill-val">-</span>
+                </div>
+                <div class="skill-row" data-skill="technical">
+                    <span class="skill-label">technical</span>
+                    <span id="val-technical" class="skill-val">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="dan-section" class="dan-section">
+            <div id="dan-bar" class="dan-bar">
+                <div id="dan-strip" class="dan-strip"></div>
+                <span id="dan-symbol" class="dan-symbol">-</span>
+                <div class="dan-info">
+                    <span id="dan-title" class="dan-title">unrated</span>
+                    <span id="dan-sub" class="dan-sub">xdc1 + companella</span>
+                </div>
+                <span id="dan-numeric" class="dan-numeric"></span>
+                <div id="dan-progress" class="dan-progress"></div>
+            </div>
+        </div>
+
+        <div id="graph-section" class="graph-section">
+            <canvas id="strain-graph" width="284" height="34"></canvas>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

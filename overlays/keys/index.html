@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>keys - ori's mania utils</title>
+    <link rel="stylesheet" href="keystrokes.css">
+</head>
+<body>
+    <div class="overlay-wrapper">
+        <div id="keystrokes-frame" aria-hidden="true" data-shape="rounded"></div>
+        <canvas id="keystrokes-canvas"></canvas>
+        <div id="keystrokes-container" data-style="dock-tint">
+            <div class="key" id="key-0" data-shape="rounded">
+                <span class="key-label">D</span>
+                <span class="key-ms">0ms</span>
+            </div>
+            <div class="key" id="key-1" data-shape="rounded">
+                <span class="key-label">F</span>
+                <span class="key-ms">0ms</span>
+            </div>
+            <div class="key" id="key-2" data-shape="rounded">
+                <span class="key-label">J</span>
+                <span class="key-ms">0ms</span>
+            </div>
+            <div class="key" id="key-3" data-shape="rounded">
+                <span class="key-label">K</span>
+                <span class="key-ms">0ms</span>
+            </div>
+        </div>
+        <div id="tosu-offline-badge" class="tosu-offline-badge"><span class="tosu-dot"></span>tosu! offline</div>
+    </div>
+    <div id="debug-info">Connecting...</div>
+    <script type="module" src="keystrokes.js"></script>
+</body>
+</html>
